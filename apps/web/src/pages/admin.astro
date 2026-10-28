@@ -1,0 +1,549 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+---
+
+<BaseLayout title="Admin | TechAtlas" description="Editorial, moderation, and catalog management dashboard.">
+  <div class="page-shell admin-shell" data-api-base={import.meta.env.PUBLIC_API_BASE ?? 'http://localhost:8080'}>
+    <div id="admin-auth" class="admin-auth panel">
+      <div class="auth-card">
+        <div class="eyebrow">TechAtlas admin</div>
+        <h1>Secure access</h1>
+        <p>Sign in with an administrator provisioned by the API environment to manage catalog, branding, and editorial content.</p>
+        <form id="login-form" class="stacked-form">
+          <label>
+            <span>Admin ID</span>
+            <input name="userId" autocomplete="username" required />
+          </label>
+          <label>
+            <span>Password</span>
+            <input name="password" type="password" autocomplete="current-password" required />
+          </label>
+          <button class="primary-button" type="submit">Log in to admin</button>
+          <div id="auth-error" class="error-text" aria-live="polite">Connect the API and use the administrator account configured on the server.</div>
+        </form>
+      </div>
+    </div>
+
+    <div id="admin-dashboard" class="admin-dashboard hidden">
+      <aside class="admin-sidebar panel">
+        <div class="sidebar-brand">
+          <span class="brand-mark" data-logo-letter>T</span>
+          <div>
+            <strong data-brand-name>TechAtlas</strong>
+            <small>Control center</small>
+          </div>
+        </div>
+        <nav class="sidebar-nav">
+          <a href="#overview">Overview</a>
+          <a href="#branding">Branding</a>
+          <a href="#admins">Admins</a>
+          <a href="#phones">Phones</a>
+          <a href="#news">News</a>
+        </nav>
+        <button id="logout-btn" class="ghost-button" type="button">Log out</button>
+      </aside>
+
+      <main class="admin-content">
+        <section id="overview" class="admin-section">
+          <div class="section-header">
+            <h2>Admin overview</h2>
+            <span class="pill">Live workspace</span>
+          </div>
+          <div id="admin-message" class="admin-message" role="status" aria-live="polite"></div>
+          <div class="grid-4 dashboard-stats">
+            <article class="panel stat-card">
+              <span>Phones</span>
+              <strong id="phone-count">0</strong>
+            </article>
+            <article class="panel stat-card">
+              <span>News stories</span>
+              <strong id="news-count">0</strong>
+            </article>
+            <article class="panel stat-card">
+              <span>Editors</span>
+              <strong id="admin-count">0</strong>
+            </article>
+            <article class="panel stat-card">
+              <span>Publishing status</span>
+              <strong id="backend-status">Checking</strong>
+            </article>
+          </div>
+        </section>
+
+        <section id="branding" class="admin-section">
+          <div class="section-header">
+            <h2>Branding and site text</h2>
+          </div>
+          <div class="panel form-panel">
+            <form id="branding-form" class="stacked-form">
+              <div class="two-col">
+                <label>
+                  <span>Brand name</span>
+                  <input name="brandName" value="TechAtlas" />
+                </label>
+                <label>
+                  <span>Logo shortcode</span>
+                  <input name="logoText" value="T" maxlength="2" />
+                </label>
+              </div>
+              <div class="two-col">
+                <label>
+                  <span>Hero headline</span>
+                  <input name="heroTitle" value="Find the right phone faster." />
+                </label>
+                <label>
+                  <span>Accent color</span>
+                  <input name="accentColor" type="color" value="#2563eb" />
+                </label>
+              </div>
+              <button class="primary-button" type="submit">Save branding</button>
+            </form>
+          </div>
+        </section>
+
+        <section id="admins" class="admin-section">
+          <div class="section-header">
+            <h2>Admin permissions</h2>
+          </div>
+          <div class="two-col">
+            <div class="panel form-panel">
+              <h3>Add another admin</h3>
+              <form id="admin-create-form" class="stacked-form">
+                <label>
+                  <span>Full name</span>
+                  <input name="name" required />
+                </label>
+                <label>
+                  <span>Admin ID</span>
+                  <input name="userId" required />
+                </label>
+                <label>
+                  <span>Password</span>
+                  <input name="password" type="password" required />
+                </label>
+                <label>
+                  <span>Role</span>
+                  <select name="role">
+                    <option value="admin">Admin</option>
+                  </select>
+                </label>
+                <button class="primary-button" type="submit">Create admin</button>
+              </form>
+            </div>
+            <div class="panel list-panel">
+              <h3>Current admin accounts</h3>
+              <ul id="admin-list" class="resource-list"></ul>
+            </div>
+          </div>
+        </section>
+
+        <section id="phones" class="admin-section">
+          <div class="section-header">
+            <h2>Phone catalog manager</h2>
+          </div>
+          <div class="two-col">
+            <div class="panel form-panel">
+              <h3>Add phone</h3>
+              <form id="phone-form" class="stacked-form">
+                <label>
+                  <span>Phone name</span>
+                  <input name="name" required />
+                </label>
+                <label>
+                  <span>Manufacturer</span>
+                  <input name="manufacturer" value="Samsung" required />
+                </label>
+                <label>
+                  <span>Price</span>
+                  <input name="price" value="$899" required />
+                </label>
+                <label>
+                  <span>Release status</span>
+                  <select name="status">
+                    <option>Released</option>
+                    <option>Upcoming</option>
+                    <option>Rumored</option>
+                  </select>
+                </label>
+                <label>
+                  <span>Display</span>
+                  <input name="display" placeholder="6.7-inch OLED, 120 Hz" />
+                </label>
+                <label>
+                  <span>Chipset</span>
+                  <input name="chipset" placeholder="Chipset name" />
+                </label>
+                <label>
+                  <span>Battery</span>
+                  <input name="battery" placeholder="5000 mAh" />
+                </label>
+                <label>
+                  <span>Camera</span>
+                  <input name="camera" placeholder="Verified camera details" />
+                </label>
+                <label>
+                  <span>Operating system</span>
+                  <input name="operating_system" placeholder="Launch OS" />
+                </label>
+                <label>
+                  <span>RAM</span>
+                  <input name="ram" placeholder="12 GB" />
+                </label>
+                <label>
+                  <span>Storage</span>
+                  <input name="storage" placeholder="256 GB" />
+                </label>
+                <label>
+                  <span>Charging</span>
+                  <input name="charging" placeholder="45 W wired" />
+                </label>
+                <label>
+                  <span>Highlights</span>
+                  <textarea name="highlights" rows="3">AI camera, flagship chipset, premium design</textarea>
+                </label>
+                <button class="primary-button" type="submit">Publish phone</button>
+              </form>
+            </div>
+            <div class="panel list-panel">
+              <h3>Phones in catalog</h3>
+              <ul id="phone-list" class="resource-list"></ul>
+            </div>
+          </div>
+        </section>
+
+        <section id="news" class="admin-section">
+          <div class="section-header">
+            <h2>Editorial newsroom</h2>
+          </div>
+          <div class="two-col">
+            <div class="panel form-panel">
+              <h3>Add story</h3>
+              <form id="news-form" class="stacked-form">
+                <label>
+                  <span>Story title</span>
+                  <input name="title" required />
+                </label>
+                <label>
+                  <span>Category</span>
+                  <input name="category" value="Industry" required />
+                </label>
+                <label>
+                  <span>Author</span>
+                  <input name="author" value="Editorial Desk" required />
+                </label>
+                <label>
+                  <span>Excerpt</span>
+                  <textarea name="excerpt" rows="3" required></textarea>
+                </label>
+                <label>
+                  <span>Article body</span>
+                  <textarea name="body" rows="8"></textarea>
+                </label>
+                <label>
+                  <span>Publication status</span>
+                  <select name="status">
+                    <option value="draft">Draft</option>
+                    <option value="published">Published</option>
+                  </select>
+                </label>
+                <button class="primary-button" type="submit">Publish story</button>
+              </form>
+            </div>
+            <div class="panel list-panel">
+              <h3>Latest stories</h3>
+              <ul id="news-list" class="resource-list"></ul>
+            </div>
+          </div>
+        </section>
+      </main>
+    </div>
+  </div>
+
+  <script is:inline>
+    window.addEventListener('DOMContentLoaded', () => {
+      const base = document.querySelector('.admin-shell').dataset.apiBase.replace(/\/$/, '') + '/api/v1';
+      const loginForm = document.getElementById('login-form');
+      const brandingForm = document.getElementById('branding-form');
+      const adminCreateForm = document.getElementById('admin-create-form');
+      const phoneForm = document.getElementById('phone-form');
+      const newsForm = document.getElementById('news-form');
+      const logoutBtn = document.getElementById('logout-btn');
+      const authError = document.getElementById('auth-error');
+      const message = document.getElementById('admin-message');
+      let editingPhoneSlug = null;
+      let editingArticleSlug = null;
+
+      async function api(path, options = {}) {
+        const response = await fetch(`${base}${path}`, {
+          ...options,
+          credentials: 'include',
+          headers: {
+            ...(options.body ? { 'Content-Type': 'application/json' } : {}),
+            ...options.headers
+          }
+        });
+        const payload = response.status === 204 ? null : await response.json().catch(() => null);
+        if (!response.ok) {
+          throw new Error(payload?.error || `Request failed (${response.status})`);
+        }
+        return payload;
+      }
+
+      function notify(text, isError = false) {
+        message.textContent = text;
+        message.classList.toggle('is-error', isError);
+      }
+
+      function setAuthState(isLoggedIn) {
+        document.getElementById('admin-dashboard').classList.toggle('hidden', !isLoggedIn);
+        document.getElementById('admin-auth').classList.toggle('hidden', isLoggedIn);
+      }
+
+      function readForm(form) {
+        return Object.fromEntries(new FormData(form).entries());
+      }
+
+      function appendText(parent, tag, value) {
+        const node = document.createElement(tag);
+        node.textContent = value || '';
+        parent.append(node);
+        return node;
+      }
+
+      function makeListItem(title, detail, meta) {
+        const item = document.createElement('li');
+        appendText(item, 'strong', title);
+        appendText(item, 'span', detail);
+        appendText(item, 'small', meta);
+        return item;
+      }
+
+      function renderSimpleList(targetId, rows, mapper) {
+        const list = document.getElementById(targetId);
+        list.replaceChildren();
+        if (!rows.length) {
+          appendText(list, 'li', 'No items yet.');
+          list.lastElementChild.className = 'empty-state';
+          return;
+        }
+        rows.forEach((row) => list.append(mapper(row)));
+      }
+
+      function addAction(item, text, callback, danger = false) {
+        const button = document.createElement('button');
+        button.type = 'button';
+        button.textContent = text;
+        button.className = danger ? 'small-action danger' : 'small-action';
+        button.addEventListener('click', callback);
+        item.append(button);
+      }
+
+      function fillForm(form, values) {
+        Object.entries(values).forEach(([key, value]) => {
+          const field = form.elements.namedItem(key);
+          if (field) field.value = value ?? '';
+        });
+        form.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      }
+
+      async function loadDashboard() {
+        try {
+          const [admins, phones, articles, branding] = await Promise.all([
+            api('/admin/users'),
+            api('/admin/phones'),
+            api('/admin/articles'),
+            api('/admin/branding')
+          ]);
+          document.getElementById('admin-count').textContent = String(admins.length);
+          document.getElementById('phone-count').textContent = String(phones.length);
+          document.getElementById('news-count').textContent = String(articles.length);
+          document.getElementById('backend-status').textContent = 'Connected';
+
+          renderSimpleList('admin-list', admins, (admin) =>
+            makeListItem(admin.display_name, admin.user_id, admin.role));
+
+          renderSimpleList('phone-list', phones, (phone) => {
+            const item = makeListItem(phone.name, phone.manufacturer, `${phone.launch_price || 'Price not confirmed'} • ${phone.release_status || 'Status unknown'}`);
+            addAction(item, 'Edit', () => {
+              editingPhoneSlug = phone.slug;
+              phoneForm.querySelector('button[type="submit"]').textContent = 'Save phone changes';
+              fillForm(phoneForm, {
+                name: phone.name,
+                manufacturer: phone.manufacturer,
+                price: phone.launch_price,
+                status: phone.release_status,
+                display: phone.display,
+                chipset: phone.chipset,
+                battery: phone.battery,
+                camera: phone.camera,
+                operating_system: phone.operating_system,
+                ram: phone.ram,
+                storage: phone.storage,
+                charging: phone.charging,
+                highlights: phone.highlights
+              });
+            });
+            addAction(item, 'Delete', async () => {
+              if (!window.confirm(`Delete ${phone.name}?`)) return;
+              try {
+                await api(`/admin/phones/${encodeURIComponent(phone.slug)}`, { method: 'DELETE' });
+                notify('Phone deleted.');
+                await loadDashboard();
+              } catch (error) { notify(error.message, true); }
+            }, true);
+            return item;
+          });
+
+          renderSimpleList('news-list', articles, (article) => {
+            const item = makeListItem(article.title, article.category || 'General', `${article.author || 'Unknown author'} • ${article.status}`);
+            addAction(item, 'Edit', () => {
+              editingArticleSlug = article.slug;
+              newsForm.querySelector('button[type="submit"]').textContent = 'Save story changes';
+              fillForm(newsForm, article);
+            });
+            addAction(item, 'Delete', async () => {
+              if (!window.confirm(`Delete “${article.title}”?`)) return;
+              try {
+                await api(`/admin/articles/${encodeURIComponent(article.slug)}`, { method: 'DELETE' });
+                notify('Story deleted.');
+                await loadDashboard();
+              } catch (error) { notify(error.message, true); }
+            }, true);
+            return item;
+          });
+
+          fillBranding(branding);
+          notify('Dashboard data loaded from the API.');
+        } catch (error) {
+          document.getElementById('backend-status').textContent = 'Offline';
+          notify(error.message, true);
+          if (error.message.includes('login required') || error.message.includes('session expired')) {
+            setAuthState(false);
+          }
+        }
+      }
+
+      function fillBranding(settings) {
+        brandingForm.elements.namedItem('brandName').value = settings.brand_name || 'TechAtlas';
+        brandingForm.elements.namedItem('logoText').value = settings.logo_text || 'T';
+        brandingForm.elements.namedItem('heroTitle').value = settings.hero_title || 'Find the right phone faster.';
+        brandingForm.elements.namedItem('accentColor').value = settings.accent_color || '#2563eb';
+      }
+
+      loginForm.addEventListener('submit', (event) => {
+        event.preventDefault();
+        const values = readForm(loginForm);
+        api('/auth/login', { method: 'POST', body: JSON.stringify({ user_id: values.userId, password: values.password }) })
+          .then(() => {
+            authError.textContent = '';
+            loginForm.reset();
+            setAuthState(true);
+            return loadDashboard();
+          })
+          .catch((error) => { authError.textContent = error.message; });
+      });
+
+      brandingForm.addEventListener('submit', (event) => {
+        event.preventDefault();
+        const values = readForm(brandingForm);
+        const settings = {
+          brand_name: values.brandName,
+          logo_text: values.logoText,
+          hero_title: values.heroTitle,
+          accent_color: values.accentColor
+        };
+        api('/admin/branding', { method: 'PUT', body: JSON.stringify(settings) })
+          .then(() => notify('Branding saved.'))
+          .catch((error) => notify(error.message, true));
+      });
+
+      adminCreateForm.addEventListener('submit', (event) => {
+        event.preventDefault();
+        const values = readForm(adminCreateForm);
+        const payload = {
+          display_name: values.name,
+          user_id: values.userId,
+          password: values.password,
+          role: values.role
+        };
+        api('/admin/users', { method: 'POST', body: JSON.stringify(payload) })
+          .then(() => {
+            adminCreateForm.reset();
+            notify('Admin account created.');
+            return loadDashboard();
+          })
+          .catch((error) => notify(error.message, true));
+      });
+
+      phoneForm.addEventListener('submit', (event) => {
+        event.preventDefault();
+        const values = readForm(phoneForm);
+        const payload = {
+          name: values.name,
+          manufacturer: values.manufacturer,
+          launch_price: values.price,
+          release_status: values.status,
+          display: values.display,
+          chipset: values.chipset,
+          battery: values.battery,
+          camera: values.camera,
+          operating_system: values.operating_system,
+          ram: values.ram,
+          storage: values.storage,
+          charging: values.charging,
+          highlights: values.highlights
+        };
+        const path = editingPhoneSlug
+          ? `/admin/phones/${encodeURIComponent(editingPhoneSlug)}`
+          : '/admin/phones';
+        api(path, { method: editingPhoneSlug ? 'PUT' : 'POST', body: JSON.stringify(payload) })
+          .then(() => {
+            phoneForm.reset();
+            editingPhoneSlug = null;
+            phoneForm.querySelector('button[type="submit"]').textContent = 'Publish phone';
+            notify('Phone saved.');
+            return loadDashboard();
+          })
+          .catch((error) => notify(error.message, true));
+      });
+
+      newsForm.addEventListener('submit', (event) => {
+        event.preventDefault();
+        const values = readForm(newsForm);
+        const payload = {
+          title: values.title,
+          category: values.category,
+          author: values.author,
+          excerpt: values.excerpt,
+          body: values.body,
+          status: values.status
+        };
+        const path = editingArticleSlug
+          ? `/admin/articles/${encodeURIComponent(editingArticleSlug)}`
+          : '/admin/articles';
+        api(path, { method: editingArticleSlug ? 'PUT' : 'POST', body: JSON.stringify(payload) })
+          .then(() => {
+            newsForm.reset();
+            editingArticleSlug = null;
+            newsForm.querySelector('button[type="submit"]').textContent = 'Publish story';
+            notify('Story saved.');
+            return loadDashboard();
+          })
+          .catch((error) => notify(error.message, true));
+      });
+
+      logoutBtn.addEventListener('click', () => {
+        api('/auth/logout', { method: 'POST' })
+          .then(() => setAuthState(false))
+          .catch((error) => notify(error.message, true));
+      });
+
+      api('/admin/me')
+        .then(() => {
+          setAuthState(true);
+          return loadDashboard();
+        })
+        .catch(() => setAuthState(false));
+    });
+  </script>
+</BaseLayout>

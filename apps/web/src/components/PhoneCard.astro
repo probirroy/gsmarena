@@ -1,0 +1,30 @@
+---
+const { phone } = Astro.props;
+---
+
+<article
+  class="phone-card"
+  data-phone-card
+  data-name={phone.name.toLowerCase()}
+  data-manufacturer={phone.manufacturer}
+  data-os={phone.os.toLowerCase().includes('ios') ? 'ios' : 'android'}
+  data-price={Number(phone.price.replace(/[^0-9]/g, ''))}
+  data-status={phone.status.toLowerCase()}
+  data-release={phone.releaseDate}
+>
+  <div class="card-topline">
+    <span class="pill">{phone.status}</span>
+    <span class="rating">★ {phone.rating}</span>
+  </div>
+  <h3><a href={`/phones/${phone.slug}`}>{phone.name}</a></h3>
+  <p class="muted">{phone.display}</p>
+  <ul>
+    <li>{phone.chipset}</li>
+    <li>{phone.battery}</li>
+    <li>{phone.camera}</li>
+  </ul>
+  <div class="card-footer">
+    <strong>{phone.price}</strong>
+    <a href={`/compare?phones=${phone.slug}`} class="inline-link">Compare</a>
+  </div>
+</article>

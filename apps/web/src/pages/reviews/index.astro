@@ -1,0 +1,28 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import { reviews } from '../../data/catalog';
+---
+
+<BaseLayout title="Reviews | TechAtlas" description="Professional reviews, scorecards, and verdicts.">
+  <div class="page-shell">
+    <div class="breadcrumbs">Home / Reviews</div>
+    <div class="page-head">
+      <h1>Reviews and verdicts</h1>
+    </div>
+    <p class="catalog-notice">Sample editorial content: scores and opinions shown here are placeholders, not published test results.</p>
+
+    <div class="grid-3">
+      {reviews.map((review) => (
+        <article class="review-card">
+          <div class="card-topline">
+            <span class="pill">{review.score}/10</span>
+            <span class="rating">★</span>
+          </div>
+          <h3><a href={`/reviews/${review.slug}`}>{review.title}</a></h3>
+          <p class="muted">{review.excerpt}</p>
+          <p>{review.author}</p>
+        </article>
+      ))}
+    </div>
+  </div>
+</BaseLayout>

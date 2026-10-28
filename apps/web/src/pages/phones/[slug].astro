@@ -1,0 +1,89 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import { phones, manufacturers, getPhoneBySlug } from '../../data/catalog';
+
+export function getStaticPaths() {
+  return phones.map((phone) => ({ params: { slug: phone.slug } }));
+}
+
+const { slug } = Astro.params;
+const phone = getPhoneBySlug(slug ?? '');
+if (!phone) {
+  throw new Error('Phone not found');
+}
+
+const manufacturer = manufacturers.find((brand) => brand.slug === phone.manufacturer);
+const related = phones.filter((item) => item.manufacturer === phone.manufacturer && item.slug !== phone.slug).slice(0, 3);
+---
+
+<BaseLayout title={`${phone.name} | TechAtlas`} description={`${phone.name} specs, pricing, highlights, and comparisons.`}>
+  <div class="page-shell">
+    <div class="breadcrumbs">Home / Phones / {phone.name}</div>
+    <div class="page-head">
+      <div>
+        <h1>{phone.name}</h1>
+        <p class="muted">{manufacturer?.name} • {phone.status} • {phone.releaseDate}</p>
+      </div>
+      <div class="stack">
+        <a href={`/compare?phones=${phone.slug}`} class="primary-button">Compare</a>
+        <a href="/phones" class="ghost-button">Back to phones</a>
+      </div>
+    </div>
+    <p class="catalog-notice">Sample record. Specifications and launch pricing require independent verification before publication.</p>
+
+    <div class="spec-grid">
+      <article class="panel">
+        <h2>Overview</h2>
+        <ul class="spec-list">
+          <li><span>Manufacturer</span><strong>{manufacturer?.name}</strong></li>
+          <li><span>Launch price</span><strong>{phone.price}</strong></li>
+          <li><span>Display</span><strong>{phone.display}</strong></li>
+          <li><span>Chipset</span><strong>{phone.chipset}</strong></li>
+          <li><span>Battery</span><strong>{phone.battery}</strong></li>
+          <li><span>Camera</span><strong>{phone.camera}</strong></li>
+        </ul>
+      </article>
+
+      <article class="panel">
+        <h2>Highlights</h2>
+        <ul>
+          {phone.highlights.map((feature) => <li>{feature}</li>)}
+        </ul>
+      </article>
+    </div>
+
+    <section class="section">
+      <div class="section-header">
+        <h2>Full specification summary</h2>
+      </div>
+      <ul class="spec-list">
+        <li><span>Operating system</span><strong>{phone.os}</strong></li>
+        <li><span>Display</span><strong>{phone.specs.display}</strong></li>
+        <li><span>Processor</span><strong>{phone.specs.processor}</strong></li>
+        <li><span>RAM</span><strong>{phone.specs.ram}</strong></li>
+        <li><span>Storage</span><strong>{phone.specs.storage}</strong></li>
+        <li><span>Battery</span><strong>{phone.specs.battery}</strong></li>
+        <li><span>Charging</span><strong>{phone.specs.charging}</strong></li>
+        <li><span>Camera</span><strong>{phone.specs.camera}</strong></li>
+      </ul>
+    </section>
+
+    <section class="section">
+      <div class="section-header">
+        <h2>Related devices</h2>
+      </div>
+      <div class="grid-3">
+        {related.map((relatedPhone) => (
+          <article class="phone-card">
+            <h3><a href={`/phones/${relatedPhone.slug}`}>{relatedPhone.name}</a></h3>
+            <p class="muted">{relatedPhone.display}</p>
+            <div class="card-footer">
+              <strong>{relatedPhone.price}</strong>
+              <a href={`/compare?phones=${phone.slug},${relatedPhone.slug}`} class="inline-link">Compare</a>
+            </div>
+          </article>
+        ))}
+      </div>
+    </section>
+  </div>
+</BaseLayout>

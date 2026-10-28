@@ -1,0 +1,27 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import { getArticleBySlug, newsArticles } from '../../data/catalog';
+
+export function getStaticPaths() {
+  return newsArticles.map((article) => ({ params: { slug: article.slug } }));
+}
+
+const { slug } = Astro.params;
+const article = getArticleBySlug(slug ?? '');
+if (!article) {
+  throw new Error('Article not found');
+}
+---
+
+<BaseLayout title={`${article.title} | TechAtlas`} description={article.excerpt}>
+  <div class="page-shell">
+    <div class="breadcrumbs">Home / News / {article.title}</div>
+    <article class="panel">
+      <span class="pill">{article.category}</span>
+      <h1>{article.title}</h1>
+      <p class="muted">By {article.author} • {article.publishedAt}</p>
+      <p>{article.excerpt}</p>
+      <p>Editorial note: This sample article demonstrates the content architecture required for a full mobile publishing platform, including SEO metadata, structured categories, and article detail pages.</p>
+    </article>
+  </div>
+</BaseLayout>

@@ -1,0 +1,12 @@
+node_modules
+.dist
+.vite
+.astro
+.DS_Store
+npm-debug.log*
+apps/web/dist
+apps/web/.astro
+apps/web/node_modules
+packages/*/node_modules
+apps/api/target
+**/.env

@@ -1,0 +1,45 @@
+---
+import '../styles/global.css';
+import Navigation from '../components/Navigation.astro';
+
+const { title = 'TechAtlas', description = 'Premium mobile discovery, comparison, and news platform.' } = Astro.props;
+const apiBase = import.meta.env.PUBLIC_API_BASE ?? 'http://localhost:8080';
+---
+
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="description" content={description} />
+    <title>{title}</title>
+  </head>
+  <body data-api-base={apiBase}>
+    <Navigation />
+    <main>
+      <slot />
+    </main>
+    <script is:inline>
+      const apiBase = document.body.dataset.apiBase;
+      fetch(`${apiBase}/api/v1/branding`)
+        .then((response) => {
+          if (!response.ok) throw new Error(`Brand settings unavailable (${response.status})`);
+          return response.json();
+        })
+        .then((settings) => {
+        document.querySelectorAll('[data-brand-name]').forEach((node) => {
+          node.textContent = settings.brand_name || 'TechAtlas';
+        });
+        document.querySelectorAll('[data-logo-letter]').forEach((node) => {
+          node.textContent = settings.logo_text || 'T';
+        });
+        document.querySelectorAll('[data-hero-title]').forEach((node) => {
+          node.textContent = settings.hero_title || 'Find the right phone faster.';
+        });
+        if (/^#[0-9a-f]{6}$/i.test(settings.accent_color || '')) {
+          document.documentElement.style.setProperty('--accent', settings.accent_color);
+        }
+      })
+      .catch((error) => console.warn('Unable to load server branding settings', error));
+    </script>
+  </body>
+</html>

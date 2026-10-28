@@ -1,0 +1,213 @@
+---
+import BaseLayout from '../layouts/BaseLayout.astro';
+import { phones } from '../data/catalog';
+
+const params = new URLSearchParams(Astro.request.url.split('?')[1] ?? '');
+const requestedSlugs = params.get('phones')?.split(',').filter(Boolean) ?? ['samsung-galaxy-s25-ultra', 'google-pixel-9-pro'];
+const selectedPhones = requestedSlugs
+  .slice(0, 4)
+  .map((slug) => phones.find((phone) => phone.slug === slug))
+  .filter((phone) => phone !== undefined);
+const compareProperties = [
+  ['Display', 'display'],
+  ['Processor', 'processor'],
+  ['RAM', 'ram'],
+  ['Storage', 'storage'],
+  ['Battery', 'battery'],
+  ['Charging', 'charging'],
+  ['Camera', 'camera']
+];
+---
+
+<BaseLayout title="Compare phones | TechAtlas" description="Compare phones side by side with key technical differences.">
+  <div class="page-shell compare-page" data-phone-catalog={JSON.stringify(phones)}>
+    <div class="breadcrumbs">Home / Compare</div>
+    <div class="page-head">
+      <h1>Phone comparison</h1>
+      <a href="/phones" class="ghost-button">Browse devices</a>
+    </div>
+
+    <section class="panel compare-picker">
+      <div>
+        <h2>Select 2–4 phones</h2>
+        <p class="muted">Choose devices to update the comparison. Your selection is shareable by URL.</p>
+      </div>
+      <div class="compare-picker-controls">
+        <label class="field" for="phone-search">
+          <span>Find a phone</span>
+          <input id="phone-search" type="search" placeholder="Search by model name" />
+        </label>
+        <label class="field" for="phone-picker">
+          <span>Phones</span>
+          <select id="phone-picker" multiple size="7">
+            {phones.map((phone) => (
+              <option value={phone.slug} selected={selectedPhones.some((selected) => selected.slug === phone.slug)}>
+                {phone.name}
+              </option>
+            ))}
+          </select>
+        </label>
+        <div class="stack">
+          <button id="compare-submit" class="primary-button" type="button">Compare selection</button>
+          <button id="copy-compare-link" class="ghost-button" type="button">Copy share link</button>
+        </div>
+        <p id="compare-message" class="compare-message" role="status" aria-live="polite"></p>
+      </div>
+    </section>
+
+    <div id="comparison-results" aria-live="polite">
+      <div class="compare-summary">
+        {selectedPhones.map((phone) => (
+          <article class="panel compare-phone">
+            <span class="pill">{phone.manufacturer}</span>
+            <h3>{phone.name}</h3>
+            <p class="muted">{phone.price}</p>
+          </article>
+        ))}
+      </div>
+      <div class="compare-table-wrap">
+        <table class="compare-table">
+          <thead>
+            <tr>
+              <th>Specification</th>
+              {selectedPhones.map((phone) => <th>{phone.name}</th>)}
+            </tr>
+          </thead>
+          <tbody>
+            {compareProperties.map(([label, key]) => (
+              <tr>
+                <th scope="row">{label}</th>
+                {selectedPhones.map((phone) => <td>{phone.specs[key as keyof typeof phone.specs] || 'Not confirmed'}</td>)}
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    import type { Phone } from '../data/catalog';
+
+    const root = document.querySelector('.compare-page');
+    const picker = document.querySelector<HTMLSelectElement>('#phone-picker');
+    const search = document.querySelector<HTMLInputElement>('#phone-search');
+    const message = document.querySelector<HTMLElement>('#compare-message');
+    const results = document.querySelector<HTMLElement>('#comparison-results');
+    if (!root || !picker || !search || !message || !results) {
+      throw new Error('Phone comparison controls were not rendered.');
+    }
+
+    const catalog = JSON.parse(root.getAttribute('data-phone-catalog') || '[]') as Phone[];
+    const categories: [string, keyof Phone['specs']][] = [
+      ['Display', 'display'],
+      ['Processor', 'processor'],
+      ['RAM', 'ram'],
+      ['Storage', 'storage'],
+      ['Battery', 'battery'],
+      ['Charging', 'charging'],
+      ['Camera', 'camera']
+    ];
+
+    function renderComparison(slugs: string[]) {
+      const chosen = slugs
+        .map((slug) => catalog.find((phone) => phone.slug === slug))
+        .filter((phone): phone is Phone => phone !== undefined);
+      if (chosen.length < 2 || chosen.length > 4) {
+        message.textContent = 'Select between two and four phones.';
+        return false;
+      }
+
+      const summary = document.createElement('div');
+      summary.className = 'compare-summary';
+      chosen.forEach((phone) => {
+        const card = document.createElement('article');
+        card.className = 'panel compare-phone';
+        const brand = document.createElement('span');
+        brand.className = 'pill';
+        brand.textContent = phone.manufacturer;
+        const name = document.createElement('h3');
+        name.textContent = phone.name;
+        const price = document.createElement('p');
+        price.className = 'muted';
+        price.textContent = phone.price;
+        card.append(brand, name, price);
+        summary.append(card);
+      });
+
+      const table = document.createElement('table');
+      table.className = 'compare-table';
+      const head = document.createElement('thead');
+      const heading = document.createElement('tr');
+      const firstHeading = document.createElement('th');
+      firstHeading.textContent = 'Specification';
+      heading.append(firstHeading);
+      chosen.forEach((phone) => {
+        const cell = document.createElement('th');
+        cell.textContent = phone.name;
+        heading.append(cell);
+      });
+      head.append(heading);
+      const body = document.createElement('tbody');
+      categories.forEach(([label, key]) => {
+        const row = document.createElement('tr');
+        const labelCell = document.createElement('th');
+        labelCell.scope = 'row';
+        labelCell.textContent = label;
+        row.append(labelCell);
+        const values = chosen.map((phone) => phone.specs[key] || 'Not confirmed');
+        const differs = new Set(values).size > 1;
+        values.forEach((value) => {
+          const cell = document.createElement('td');
+          cell.textContent = value;
+          if (differs) cell.className = 'difference';
+          row.append(cell);
+        });
+        body.append(row);
+      });
+      table.append(head, body);
+      const tableWrap = document.createElement('div');
+      tableWrap.className = 'compare-table-wrap';
+      tableWrap.append(table);
+      results.replaceChildren(summary, tableWrap);
+      message.textContent = 'Differences are highlighted; they do not imply an overall winner.';
+      return true;
+    }
+
+    function selectedSlugs() {
+      return [...picker.selectedOptions].map((option) => option.value);
+    }
+
+    const urlSlugs = new URLSearchParams(window.location.search).get('phones');
+    if (urlSlugs) {
+      const selected = new Set(urlSlugs.split(',').filter(Boolean).slice(0, 4));
+      [...picker.options].forEach((option) => { option.selected = selected.has(option.value); });
+      renderComparison([...selected]);
+    }
+
+    document.querySelector('#compare-submit').addEventListener('click', () => {
+      const slugs = selectedSlugs();
+      if (renderComparison(slugs)) {
+        const url = new URL(window.location.href);
+        url.searchParams.set('phones', slugs.join(','));
+        history.replaceState({}, '', url);
+      }
+    });
+
+    search.addEventListener('input', () => {
+      const query = search.value.trim().toLowerCase();
+      [...picker.options].forEach((option) => {
+        option.hidden = query.length > 0 && !option.textContent.toLowerCase().includes(query);
+      });
+    });
+
+    document.querySelector('#copy-compare-link').addEventListener('click', async () => {
+      try {
+        await navigator.clipboard.writeText(window.location.href);
+        message.textContent = 'Comparison link copied.';
+      } catch {
+        message.textContent = 'Copy is unavailable in this browser. Copy the address bar URL instead.';
+      }
+    });
+  </script>
+</BaseLayout>

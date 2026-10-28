@@ -1,0 +1,24 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import { newsArticles } from '../../data/catalog';
+---
+
+<BaseLayout title="News | TechAtlas" description="Latest mobile technology stories and industry analysis.">
+  <div class="page-shell">
+    <div class="breadcrumbs">Home / News</div>
+    <div class="page-head">
+      <h1>Latest technology news</h1>
+    </div>
+
+    <div class="grid-3">
+      {newsArticles.map((article) => (
+        <article class="article-card">
+          <span class="pill">{article.category}</span>
+          <h3><a href={`/news/${article.slug}`}>{article.title}</a></h3>
+          <p class="muted">{article.excerpt}</p>
+          <p>{article.author} • {article.publishedAt}</p>
+        </article>
+      ))}
+    </div>
+  </div>
+</BaseLayout>

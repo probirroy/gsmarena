@@ -1,0 +1,40 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import PhoneCard from '../../components/PhoneCard.astro';
+import { manufacturers, getPhonesByManufacturer } from '../../data/catalog';
+
+export function getStaticPaths() {
+  return manufacturers.map((brand) => ({ params: { slug: brand.slug } }));
+}
+
+const { slug } = Astro.params;
+const brand = manufacturers.find((item) => item.slug === slug);
+if (!brand) {
+  throw new Error('Brand not found');
+}
+const phonesForBrand = getPhonesByManufacturer(brand.slug);
+---
+
+<BaseLayout title={`${brand.name} | TechAtlas`} description={`${brand.name} product catalog.`}>
+  <div class="page-shell">
+    <div class="breadcrumbs">Home / Brands / {brand.name}</div>
+    <div class="page-head">
+      <div>
+        <h1>{brand.name}</h1>
+        <p class="muted">{brand.country}</p>
+      </div>
+      <a href={brand.website} target="_blank" rel="noreferrer" class="primary-button">Official website</a>
+    </div>
+
+    <article class="panel" style="margin-bottom: 2rem;">
+      <p>{brand.description}</p>
+    </article>
+
+    <div class="section-header">
+      <h2>{phonesForBrand.length} devices</h2>
+    </div>
+    <div class="grid-4">
+      {phonesForBrand.map((phone) => <PhoneCard phone={phone} />)}
+    </div>
+  </div>
+</BaseLayout>

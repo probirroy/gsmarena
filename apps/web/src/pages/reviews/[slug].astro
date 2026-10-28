@@ -1,0 +1,27 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import { getReviewBySlug, reviews } from '../../data/catalog';
+
+export function getStaticPaths() {
+  return reviews.map((review) => ({ params: { slug: review.slug } }));
+}
+
+const { slug } = Astro.params;
+const review = getReviewBySlug(slug ?? '');
+if (!review) {
+  throw new Error('Review not found');
+}
+---
+
+<BaseLayout title={`${review.title} | TechAtlas`} description={review.excerpt}>
+  <div class="page-shell">
+    <div class="breadcrumbs">Home / Reviews / {review.title}</div>
+    <article class="panel">
+      <span class="pill">Review score {review.score}/10</span>
+      <h1>{review.title}</h1>
+      <p class="muted">By {review.author} • {review.publishedAt}</p>
+      <p>{review.excerpt}</p>
+      <p>This detail view demonstrates the editorial review pattern for professional coverage, pros and cons, and review scorecards.</p>
+    </article>
+  </div>
+</BaseLayout>

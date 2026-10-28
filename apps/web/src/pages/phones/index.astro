@@ -1,0 +1,158 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import PhoneCard from '../../components/PhoneCard.astro';
+import { phones, manufacturers } from '../../data/catalog';
+---
+
+<BaseLayout title="Phone directory | TechAtlas" description="Browse and filter phones by brand, price, chipset, battery, display, and camera.">
+  <div class="page-shell">
+    <div class="breadcrumbs">Home / Phones</div>
+    <div class="page-head">
+      <h1>Phone directory</h1>
+      <a href="/compare?phones=samsung-galaxy-s25-ultra,google-pixel-9-pro" class="primary-button">Quick compare</a>
+    </div>
+    <p class="catalog-notice">Sample catalog data only. Prices and specifications are illustrative, not live offers.</p>
+
+    <form id="phone-filters" class="panel" style="margin-bottom: 1.5rem;">
+      <div class="filters">
+        <div class="field">
+          <label for="search">Search</label>
+          <input id="search" name="q" type="search" value="" placeholder="Search for a handset" />
+        </div>
+        <div class="field">
+          <label for="brand">Brand</label>
+          <select id="brand" name="brand">
+            <option value="">All brands</option>
+            {manufacturers.map((brand) => <option value={brand.slug}>{brand.name}</option>)}
+          </select>
+        </div>
+        <div class="field">
+          <label for="os">OS</label>
+          <select id="os" name="os">
+            <option value="">Any OS</option>
+            <option value="android">Android</option>
+            <option value="ios">iOS</option>
+          </select>
+        </div>
+        <div class="field">
+          <label for="price-range">Price</label>
+          <select id="price-range" name="price">
+            <option value="">Any price</option>
+            <option value="under-700">Under $700</option>
+            <option value="700-999">$700 – $999</option>
+            <option value="1000+">$1000+</option>
+          </select>
+        </div>
+        <div class="field">
+          <label for="status">Release status</label>
+          <select id="status" name="status">
+            <option value="">Any status</option>
+            <option value="released">Released</option>
+            <option value="upcoming">Upcoming</option>
+            <option value="rumored">Rumored</option>
+          </select>
+        </div>
+        <div class="field">
+          <label for="sort">Sort by</label>
+          <select id="sort" name="sort">
+            <option value="popular">Popular</option>
+            <option value="name">Name</option>
+            <option value="price-low">Price: low to high</option>
+            <option value="price-high">Price: high to low</option>
+            <option value="release">Release date</option>
+          </select>
+        </div>
+      </div>
+      <div class="stack">
+        <button class="primary-button" type="submit">Apply filters</button>
+        <a href="/phones" class="ghost-button">Clear all</a>
+      </div>
+    </form>
+
+    <div class="section-header">
+      <h2><span id="result-count">{phones.length}</span> results</h2>
+      <span class="muted">Filters combine and are saved in the URL</span>
+    </div>
+
+    <div id="phone-results" class="grid-4">
+      {phones.map((phone) => <PhoneCard phone={phone} />)}
+    </div>
+    <p id="empty-results" class="panel empty-state hidden" role="status">No phones match these filters. Try broadening your search.</p>
+  </div>
+  <script>
+    const form = document.querySelector<HTMLFormElement>('#phone-filters');
+    const results = document.querySelector<HTMLElement>('#phone-results');
+    const count = document.querySelector<HTMLElement>('#result-count');
+    const empty = document.querySelector<HTMLElement>('#empty-results');
+    if (!form || !results || !count || !empty) throw new Error('Phone filters did not render.');
+
+    const fields = {
+      q: form.elements.namedItem('q') as HTMLInputElement,
+      brand: form.elements.namedItem('brand') as HTMLSelectElement,
+      os: form.elements.namedItem('os') as HTMLSelectElement,
+      price: form.elements.namedItem('price') as HTMLSelectElement,
+      status: form.elements.namedItem('status') as HTMLSelectElement,
+      sort: form.elements.namedItem('sort') as HTMLSelectElement
+    };
+    const cards = [...results.querySelectorAll<HTMLElement>('[data-phone-card]')];
+    const query = new URLSearchParams(window.location.search);
+    fields.q.value = query.get('q') || '';
+    fields.brand.value = query.get('brand') || '';
+    fields.os.value = query.get('os') || '';
+    fields.price.value = query.get('price') || '';
+    fields.status.value = query.get('status') || '';
+    fields.sort.value = query.get('sort') || 'popular';
+
+    function matchesPrice(price: number, range: string) {
+      if (!range) return true;
+      if (range === 'under-700') return price > 0 && price < 700;
+      if (range === '700-999') return price >= 700 && price <= 999;
+      if (range === '1000+') return price >= 1000;
+      return false;
+    }
+
+    function applyFilters(updateUrl: boolean) {
+      const term = fields.q.value.trim().toLowerCase();
+      const filtered = cards.filter((card) => {
+        const price = Number(card.dataset.price || 0);
+        const statusMatches = !fields.status.value || card.dataset.status === fields.status.value;
+        return (!term || card.dataset.name?.includes(term))
+          && (!fields.brand.value || card.dataset.manufacturer === fields.brand.value)
+          && (!fields.os.value || card.dataset.os === fields.os.value)
+          && matchesPrice(price, fields.price.value)
+          && statusMatches;
+      });
+
+      const sorting = fields.sort.value;
+      filtered.sort((a, b) => {
+        if (sorting === 'name') return (a.dataset.name || '').localeCompare(b.dataset.name || '');
+        if (sorting === 'price-low') return Number(a.dataset.price || 0) - Number(b.dataset.price || 0);
+        if (sorting === 'price-high') return Number(b.dataset.price || 0) - Number(a.dataset.price || 0);
+        if (sorting === 'release') return (b.dataset.release || '').localeCompare(a.dataset.release || '');
+        return cards.indexOf(a) - cards.indexOf(b);
+      });
+
+      cards.forEach((card) => { card.hidden = !filtered.includes(card); });
+      filtered.forEach((card) => results.append(card));
+      count.textContent = String(filtered.length);
+      empty.classList.toggle('hidden', filtered.length > 0);
+
+      if (updateUrl) {
+        const params = new URLSearchParams();
+        Object.entries(fields).forEach(([key, field]) => {
+          if (field.value && !(key === 'sort' && field.value === 'popular')) params.set(key, field.value);
+        });
+        const suffix = params.toString();
+        history.replaceState({}, '', `${window.location.pathname}${suffix ? `?${suffix}` : ''}`);
+      }
+    }
+
+    form.addEventListener('submit', (event) => {
+      event.preventDefault();
+      applyFilters(true);
+    });
+    fields.q.addEventListener('input', () => applyFilters(true));
+    form.addEventListener('change', () => applyFilters(true));
+    applyFilters(false);
+  </script>
+</BaseLayout>

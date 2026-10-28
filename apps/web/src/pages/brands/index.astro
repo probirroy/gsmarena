@@ -1,0 +1,24 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import { manufacturers } from '../../data/catalog';
+---
+
+<BaseLayout title="Brands | TechAtlas" description="Browse manufacturers and product families.">
+  <div class="page-shell">
+    <div class="breadcrumbs">Home / Brands</div>
+    <div class="page-head">
+      <h1>Manufacturer directory</h1>
+    </div>
+
+    <div class="grid-4">
+      {manufacturers.map((brand) => (
+        <article class="brand-card">
+          <h3><a href={`/brands/${brand.slug}`}>{brand.name}</a></h3>
+          <p class="muted">{brand.country}</p>
+          <p>{brand.description}</p>
+          <a href={brand.website} target="_blank" rel="noreferrer" class="inline-link">Official site</a>
+        </article>
+      ))}
+    </div>
+  </div>
+</BaseLayout>

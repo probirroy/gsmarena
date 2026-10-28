@@ -1,0 +1,64 @@
+---
+const navItems = [
+  { label: 'Home', href: '/' },
+  { label: 'News', href: '/news' },
+  { label: 'Reviews', href: '/reviews' },
+  { label: 'Phone finder', href: '/phones' },
+  { label: 'Compare', href: '/compare?phones=samsung-galaxy-s25-ultra,google-pixel-9-pro' },
+  { label: 'Brands', href: '/brands' },
+  { label: 'Upcoming', href: '/phones?status=upcoming' }
+];
+---
+
+<header class="site-header">
+  <div class="masthead">
+    <div class="container masthead-inner">
+      <a class="brand" href="/" aria-label="TechAtlas home">
+        <span class="brand-mark" data-logo-letter>T</span>
+        <span class="brand-wordmark" data-brand-name>TechAtlas</span>
+      </a>
+      <form class="masthead-search" action="/phones" method="get" role="search">
+        <label class="sr-only" for="site-search">Search phones</label>
+        <input id="site-search" type="search" name="q" placeholder="Search phones, brands and specs" />
+        <button type="submit" aria-label="Search">⌕</button>
+      </form>
+      <div class="masthead-tools">
+        <a href="/compare?phones=samsung-galaxy-s25-ultra,google-pixel-9-pro"><span aria-hidden="true">⇄</span><small>Compare</small></a>
+        <a href="/brands"><span aria-hidden="true">◈</span><small>Brands</small></a>
+        <a href="/admin"><span aria-hidden="true">↗</span><small>Admin</small></a>
+      </div>
+      <button id="nav-toggle" class="menu-toggle" type="button" aria-expanded="false" aria-controls="primary-navigation">
+        Menu
+      </button>
+    </div>
+  </div>
+  <div class="nav-band">
+    <div class="container nav-band-inner">
+      <nav id="primary-navigation" aria-label="Primary navigation" class="main-nav">
+        {navItems.map((item) => (
+          <a href={item.href}>{item.label}</a>
+        ))}
+      </nav>
+    </div>
+  </div>
+</header>
+
+<script>
+  const toggle = document.querySelector<HTMLButtonElement>('#nav-toggle');
+  const navigation = document.querySelector<HTMLElement>('#primary-navigation');
+
+  if (!toggle || !navigation) throw new Error('Primary navigation controls did not render.');
+
+  toggle.addEventListener('click', () => {
+    const expanded = toggle.getAttribute('aria-expanded') === 'true';
+    toggle.setAttribute('aria-expanded', String(!expanded));
+    navigation.classList.toggle('is-open', !expanded);
+  });
+
+  navigation.addEventListener('click', (event) => {
+    if (event.target instanceof Element && event.target.closest('a')) {
+      toggle.setAttribute('aria-expanded', 'false');
+      navigation.classList.remove('is-open');
+    }
+  });
+</script>

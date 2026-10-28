@@ -296,49 +296,6 @@ main { padding-bottom: 3rem; }
   padding-bottom: 2rem;
 }
 
-.ad-slot-wrap {
-  display: grid;
-  justify-items: center;
-  gap: 5px;
-  padding: 8px 0 20px;
-}
-
-.ad-label {
-  color: #777b80;
-  font-size: 0.68rem;
-  text-transform: uppercase;
-}
-
-.ad-slot {
-  width: min(970px, 100%);
-  min-height: 100px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 10px;
-  padding: 15px;
-  border: 1px solid #d5d7d9;
-  background:
-    linear-gradient(110deg, transparent 0 48%, rgba(30, 65, 82, 0.06) 48% 49%, transparent 49%),
-    #e8eaec;
-  color: #51575b;
-  font-size: 0.78rem;
-}
-
-.ad-slot strong {
-  color: #3e454a;
-  font-size: 0.92rem;
-}
-
-.ad-slot-mark {
-  padding: 5px 8px;
-  border: 1px solid #c5c8ca;
-  color: #6b7176;
-  text-transform: uppercase;
-  letter-spacing: 0.06em;
-  font-size: 0.64rem;
-}
-
 .home-feature-layout {
   display: grid;
   grid-template-columns: minmax(260px, 0.82fr) minmax(0, 2fr);
@@ -1166,8 +1123,6 @@ main { padding-bottom: 3rem; }
   .masthead-search button { width: 34px; flex-basis: 34px; }
   .menu-toggle { padding: 0.5rem 0.6rem; font-size: 0.78rem; }
   .home-page { width: calc(100% - 1rem); }
-  .ad-slot { min-height: 78px; flex-wrap: wrap; gap: 5px 8px; padding: 10px; }
-  .ad-slot strong { font-size: 0.8rem; }
   .finder-column { grid-template-columns: 1fr; }
   .home-lead-grid { grid-template-columns: 1fr; }
   .feature-main { min-height: 300px; }

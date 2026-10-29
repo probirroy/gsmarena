@@ -3,102 +3,110 @@ import BaseLayout from '../layouts/BaseLayout.astro';
 import { manufacturers, phones, newsArticles, reviews } from '../data/catalog';
 
 const leadReview = reviews[0];
-const sideReviews = reviews.slice(1, 3);
 const latestArticles = newsArticles.slice(0, 3);
-const brandColumns = [
-  manufacturers.filter((_, index) => index % 2 === 0),
-  manufacturers.filter((_, index) => index % 2 === 1)
-];
 const storyImages = [
-  'https://images.unsplash.com/photo-1511707171634-5f897ff02aa9?auto=format&fit=crop&w=1200&q=85',
+  'https://images.unsplash.com/photo-1511707171634-5f897ff02aa9?auto=format&fit=crop&w=1400&q=85',
   'https://images.unsplash.com/photo-1598327105666-5b89351aff97?auto=format&fit=crop&w=900&q=85',
   'https://images.unsplash.com/photo-1544244015-0df4b3ffc6b0?auto=format&fit=crop&w=900&q=85',
   'https://images.unsplash.com/photo-1592899677977-9c10ca588bbd?auto=format&fit=crop&w=900&q=85'
 ];
 ---
 
-<BaseLayout title="TechAtlas | Mobile technology, reviews & phone finder" description="Explore phone specs, reviews, comparisons, and the latest mobile technology coverage.">
+<BaseLayout title="TechAtlas | Find your next phone" description="Explore thoughtful phone guides, reviews, comparisons, and mobile technology stories.">
   <div class="home-page">
-    <section class="home-feature-layout" aria-label="Featured content">
+    <section class="home-intro" aria-labelledby="home-title">
+      <div class="home-intro-copy">
+        <span class="section-eyebrow">A smarter way to explore mobile</span>
+        <h1 id="home-title">Good tech choices start with <em>clear answers.</em></h1>
+        <p>Compare the details that matter, get to know the makers, and find a phone that fits the way you live.</p>
+        <div class="home-intro-actions">
+          <a class="home-primary-link" href="/phones">Explore phones <span aria-hidden="true">→</span></a>
+          <a class="home-secondary-link" href="/compare?phones=samsung-galaxy-s25-ultra,google-pixel-9-pro">Compare top picks</a>
+        </div>
+      </div>
+      <a class="home-intro-note" href="/news">
+        <span class="intro-note-icon" aria-hidden="true">✳</span>
+        <span><strong>Curious about what’s next?</strong><small>Get the latest mobile stories and practical context.</small></span>
+        <span class="intro-note-arrow" aria-hidden="true">↗</span>
+      </a>
+    </section>
+
+    <section class="home-feature-layout" aria-label="Explore phones and featured coverage">
       <aside class="finder-column">
         <section class="brand-finder">
           <div class="finder-heading">
-            <span class="finder-icon" aria-hidden="true">⌕</span>
-            <h1>Phone finder</h1>
+            <span class="finder-step">01</span>
+            <div><span class="finder-label">Start exploring</span><h2>Browse by maker</h2></div>
           </div>
-          <div class="brand-columns">
-            {brandColumns.map((column) => (
-              <ul>
-                {column.map((brand) => (
-                  <li><a href={`/brands/${brand.slug}`}>{brand.name}</a></li>
-                ))}
-              </ul>
+          <div class="brand-list">
+            {manufacturers.map((brand) => (
+              <a class="brand-chip" href={`/brands/${brand.slug}`}>
+                <span>{brand.name}</span><span aria-hidden="true">↗</span>
+              </a>
             ))}
           </div>
           <div class="finder-footer">
-            <a href="/brands">All brands <span aria-hidden="true">→</span></a>
-            <a href="/phones?status=upcoming">Upcoming <span aria-hidden="true">↗</span></a>
+            <a href="/brands">See every brand <span aria-hidden="true">→</span></a>
           </div>
         </section>
 
         <section class="finder-shortcuts">
-          <h2>Explore devices</h2>
-          <a href="/phones">Browse all phones <span>→</span></a>
-          <a href="/compare?phones=samsung-galaxy-s25-ultra,google-pixel-9-pro">Compare phones <span>→</span></a>
-          <a href="/phones?status=upcoming">Upcoming phones <span>→</span></a>
+          <span class="finder-label">Useful shortcuts</span>
+          <a href="/phones">Phone directory <span aria-hidden="true">→</span></a>
+          <a href="/compare?phones=samsung-galaxy-s25-ultra,google-pixel-9-pro">Side-by-side compare <span aria-hidden="true">→</span></a>
+          <a href="/phones?status=upcoming">Coming soon <span aria-hidden="true">→</span></a>
         </section>
       </aside>
 
       <div class="home-lead-grid">
         {leadReview && (
-          <a
-            class="feature-tile feature-main"
-            href={`/reviews/${leadReview.slug}`}
-            style={`--tile-image: url('${storyImages[0]}')`}
-          >
-            <img src={storyImages[0]} alt="Close-up of a modern smartphone" fetchpriority="high" />
+          <a class="feature-tile feature-main" href={`/reviews/${leadReview.slug}`}>
+            <img src={storyImages[0]} alt="A modern smartphone photographed up close" fetchpriority="high" />
             <span class="feature-shade"></span>
-            <span class="feature-meta"><span>★ {leadReview.score} review</span><span>{leadReview.publishedAt}</span></span>
+            <span class="feature-meta"><span>TechAtlas review</span><span>{leadReview.score} / 10</span></span>
             <span class="feature-copy">
-              <span class="feature-kicker">In-depth review</span>
+              <span class="feature-kicker">The long read</span>
               <strong>{leadReview.title}</strong>
               <span>{leadReview.excerpt}</span>
+              <span class="feature-read-link">Read the review <span aria-hidden="true">→</span></span>
             </span>
           </a>
         )}
 
-        <div class="feature-side-stack">
-          {sideReviews.map((review, index) => (
-            <a
-              class="feature-tile feature-side"
-              href={`/reviews/${review.slug}`}
-              style={`--tile-image: url('${storyImages[index + 1]}')`}
-            >
-              <img src={storyImages[index + 1]} alt="A mobile device featured in a TechAtlas review" loading="eager" />
-              <span class="feature-shade"></span>
-              <span class="feature-meta"><span>★ {review.score}</span><span>Review</span></span>
-              <span class="feature-copy">
-                <span class="feature-kicker">Review</span>
-                <strong>{review.title}</strong>
-              </span>
-            </a>
-          ))}
-          <a class="review-index-link" href="/reviews">All reviews <span>→</span></a>
-        </div>
+        <aside class="briefing-panel" aria-labelledby="briefing-title">
+          <div class="briefing-heading">
+            <div><span class="section-eyebrow">The latest</span><h2 id="briefing-title">Mobile briefing</h2></div>
+            <span class="briefing-spark" aria-hidden="true">✳</span>
+          </div>
+          <div class="briefing-stories">
+            {latestArticles.map((article, index) => (
+              <a class="briefing-story" href={`/news/${article.slug}`}>
+                <img src={storyImages[index + 1]} alt="" loading="lazy" />
+                <span class="briefing-story-copy">
+                  <small>{article.category}</small>
+                  <strong>{article.title}</strong>
+                  <span>{article.publishedAt}</span>
+                </span>
+                <span class="briefing-arrow" aria-hidden="true">↗</span>
+              </a>
+            ))}
+          </div>
+          <a class="briefing-more" href="/news">All stories <span aria-hidden="true">→</span></a>
+        </aside>
       </div>
     </section>
 
     <p class="catalog-notice home-catalog-notice">
-      Demo catalog: specifications, prices, reviews, and images are sample content. Verify product data with official sources before relying on it.
+      TechAtlas is a demo catalog. Product specifications, ratings, prices, and editorial examples are illustrative; confirm details with manufacturers before making a purchase.
     </p>
 
     <section class="home-latest" aria-labelledby="latest-heading">
       <div class="latest-heading">
         <div>
-          <span class="section-eyebrow">From the newsroom</span>
-          <h2 id="latest-heading">Latest mobile stories</h2>
+          <span class="section-eyebrow">Ideas worth a closer look</span>
+          <h2 id="latest-heading">From the newsroom</h2>
         </div>
-        <a href="/news" class="latest-all-link">All news <span>→</span></a>
+        <a href="/news" class="latest-all-link">Explore all stories <span aria-hidden="true">→</span></a>
       </div>
       <div class="latest-story-grid">
         {latestArticles.map((article, index) => (
@@ -110,7 +118,7 @@ const storyImages = [
             <span class="latest-story-copy">
               <strong>{article.title}</strong>
               <span>{article.excerpt}</span>
-              <small>{article.author} <i>·</i> {article.publishedAt}</small>
+              <small>{article.author} <i aria-hidden="true">·</i> {article.publishedAt}</small>
             </span>
           </a>
         ))}
@@ -120,16 +128,16 @@ const storyImages = [
     <section class="home-device-strip" aria-labelledby="popular-heading">
       <div class="latest-heading">
         <div>
-          <span class="section-eyebrow">Explore the catalog</span>
-          <h2 id="popular-heading">Popular phones</h2>
+          <span class="section-eyebrow">A good place to start</span>
+          <h2 id="popular-heading">Phones people are exploring</h2>
         </div>
-        <a href="/phones" class="latest-all-link">Phone directory <span>→</span></a>
+        <a href="/phones" class="latest-all-link">Open the directory <span aria-hidden="true">→</span></a>
       </div>
       <div class="popular-phone-grid">
         {phones.slice(0, 4).map((phone) => (
           <a class="popular-phone" href={`/phones/${phone.slug}`}>
-            <span class="popular-device-icon" aria-hidden="true">▯</span>
-            <span><strong>{phone.name}</strong><small>{phone.display}</small></span>
+            <span class="popular-device-icon" aria-hidden="true">✳</span>
+            <span><strong>{phone.name}</strong><small>{phone.display} <i aria-hidden="true">·</i> {phone.price}</small></span>
             <span class="popular-arrow" aria-hidden="true">↗</span>
           </a>
         ))}

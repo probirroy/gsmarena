@@ -1,7 +1,8 @@
 ---
 import BaseLayout from '../../layouts/BaseLayout.astro';
 import PhoneCard from '../../components/PhoneCard.astro';
-import { manufacturers, getPhonesByManufacturer } from '../../data/catalog';
+import DeviceArt from '../../components/DeviceArt.astro';
+import { manufacturers, getPhonesByManufacturer, phones } from '../../data/catalog';
 
 export function getStaticPaths() {
   return manufacturers.map((brand) => ({ params: { slug: brand.slug } }));
@@ -12,29 +13,1072 @@ const brand = manufacturers.find((item) => item.slug === slug);
 if (!brand) {
   throw new Error('Brand not found');
 }
-const phonesForBrand = getPhonesByManufacturer(brand.slug);
+
+const brandPhones = getPhonesByManufacturer(brand.slug);
+const sortedByRating = [...brandPhones].sort((a, b) => b.rating - a.rating);
+const newest = [...brandPhones].sort((a, b) => b.releaseDate.localeCompare(a.releaseDate))[0];
+const topRated = sortedByRating.slice(0, 3);
+const avgRating = brandPhones.length
+  ? (brandPhones.reduce((total, phone) => total + phone.rating, 0) / brandPhones.length).toFixed(1)
+  : '—';
+const prices = brandPhones.map((phone) => Number(phone.price.replace(/[^0-9]/g, ''))).filter(Boolean);
+const priceLow = prices.length ? Math.min(...prices) : 0;
+const priceHigh = prices.length ? Math.max(...prices) : 0;
+const otherBrands = manufacturers
+  .filter((item) => item.slug !== brand.slug && phones.some((phone) => phone.manufacturer === item.slug))
+  .slice(0, 6);
+
+const heroPhones = [...brandPhones].sort((a, b) => b.rating - a.rating).slice(0, 2);
 ---
 
-<BaseLayout title={`${brand.name} | TechAtlas`} description={`${brand.name} product catalog.`}>
-  <div class="page-shell">
-    <div class="breadcrumbs">Home / Brands / {brand.name}</div>
-    <div class="page-head">
-      <div>
+<BaseLayout title={`${brand.name} phones | TechAtlas`} description={`Browse ${brand.name} phones, specifications, prices and comparisons. ${brand.description}`}>
+  <div class="brand-page">
+    <nav class="crumbs" aria-label="Breadcrumb">
+      <a href="/">Home</a><span aria-hidden="true">/</span>
+      <a href="/brands">Brands</a><span aria-hidden="true">/</span>
+      <span>{brand.name}</span>
+    </nav>
+
+    <header class="brand-hero">
+      <span class="hero-grid" aria-hidden="true"></span>
+      <div class="hero-copy">
+        <span class="hero-monogram" aria-hidden="true">{brand.name.slice(0, 1)}</span>
+        <span class="hero-eyebrow">{brand.country} · Manufacturer profile</span>
         <h1>{brand.name}</h1>
-        <p class="muted">{brand.country}</p>
+        <p>{brand.description}</p>
+        <div class="hero-actions">
+          <a class="hero-site" href={brand.website} target="_blank" rel="noreferrer">
+            Official website
+            <span aria-hidden="true">↗</span>
+          </a>
+          <a class="hero-directory" href="/brands">All manufacturers</a>
+        </div>
       </div>
-      <a href={brand.website} target="_blank" rel="noreferrer" class="primary-button">Official website</a>
+
+      <div class="hero-stats">
+        <span><strong>{brandPhones.length}</strong> phones indexed</span>
+        <span><strong>{avgRating}</strong> average rating</span>
+        {prices.length > 0 && <span><strong>${priceLow.toLocaleString()}–${priceHigh.toLocaleString()}</strong> price range</span>}
+        {newest && <span><strong>{newest.releaseDate}</strong> newest release</span>}
+      </div>
+
+      <div class="hero-visual" aria-hidden="true">
+        <span class="visual-ring visual-ring--one"></span>
+        <span class="visual-ring visual-ring--two"></span>
+        {heroPhones[1] && (
+          <span class="visual-phone visual-phone--back">
+            <DeviceArt name={heroPhones[1].name} slug={heroPhones[1].slug} manufacturer={heroPhones[1].manufacturer} size="md" width={88} />
+          </span>
+        )}
+        {heroPhones[0] && (
+          <span class="visual-phone visual-phone--front">
+            <DeviceArt name={heroPhones[0].name} slug={heroPhones[0].slug} manufacturer={heroPhones[0].manufacturer} size="lg" width={122} />
+          </span>
+        )}
+        <span class="visual-word" aria-hidden="true">{brand.name.toUpperCase()}</span>
+      </div>
+    </header>
+
+    <div class="brand-layout">
+      <main class="brand-main">
+        <section class="phones-panel" aria-labelledby="brand-phones-title">
+          <header class="panel-head">
+            <h2 id="brand-phones-title">{brand.name} phone catalog</h2>
+            <span>{brandPhones.length} {brandPhones.length === 1 ? 'device' : 'devices'}</span>
+          </header>
+
+          {brandPhones.length > 0 ? (
+            <div class="brand-phone-grid">
+              {brandPhones.map((phone) => <PhoneCard phone={phone} />)}
+            </div>
+          ) : (
+            <div class="empty-brand">
+              <span class="empty-glyph" aria-hidden="true">+</span>
+              <h3>{brand.name} devices are coming to the catalog</h3>
+              <p>This manufacturer is listed in the directory, but no sample devices have been indexed yet.</p>
+              <a href="/phones">Browse available phones</a>
+            </div>
+          )}
+        </section>
+
+        {brandPhones.length > 0 && (
+          <section class="compare-strip" aria-labelledby="compare-strip-title">
+            <div>
+              <span class="compare-eyebrow">Head to head</span>
+              <h2 id="compare-strip-title">Put two {brand.name} phones side by side.</h2>
+              <p>See exactly where the specs diverge before choosing a model.</p>
+            </div>
+            <div class="compare-actions">
+              <a class="compare-primary" href={`/compare?phones=${brandPhones[0].slug},${brandPhones[1]?.slug ?? brandPhones[0].slug}`}>
+                Compare top models <span aria-hidden="true">→</span>
+              </a>
+              <a class="compare-secondary" href={`/phones?brand=${brand.slug}`}>Filter all {brand.name} phones</a>
+            </div>
+          </section>
+        )}
+      </main>
+
+      <aside class="brand-side" aria-label="Brand information">
+        <section class="side-panel">
+          <header class="panel-head">
+            <h2>Brand profile</h2>
+          </header>
+          <div class="profile-body">
+            <div class="profile-monogram" aria-hidden="true">{brand.name.slice(0, 1)}</div>
+            <div class="profile-name">
+              <strong>{brand.name}</strong>
+              <span>{brand.country}</span>
+            </div>
+            <p>{brand.description}</p>
+            <dl class="profile-facts">
+              <div><dt>Catalog</dt><dd>{brandPhones.length} phones</dd></div>
+              <div><dt>Average score</dt><dd>{avgRating} / 5</dd></div>
+              {prices.length > 0 && <div><dt>Price range</dt><dd>${priceLow.toLocaleString()} – ${priceHigh.toLocaleString()}</dd></div>}
+              <div><dt>Website</dt><dd><a href={brand.website} target="_blank" rel="noreferrer">Visit ↗</a></dd></div>
+            </dl>
+          </div>
+        </section>
+
+        {topRated.length > 0 && (
+          <section class="side-panel">
+            <header class="panel-head">
+              <h2>Highest rated</h2>
+              <span>{brand.name}</span>
+            </header>
+            <div class="top-rated-list">
+              {topRated.map((phone, index) => (
+                <a class="top-rated-row" href={`/phones/${phone.slug}`}>
+                  <span class="top-rated-rank">{String(index + 1).padStart(2, '0')}</span>
+                  <span class="top-rated-art">
+                    <DeviceArt name={phone.name} slug={phone.slug} manufacturer={phone.manufacturer} size="xs" width={18} />
+                  </span>
+                  <span class="top-rated-copy">
+                    <strong>{phone.name}</strong>
+                    <small>{phone.price}</small>
+                  </span>
+                  <span class="top-rated-score">★ {phone.rating}</span>
+                </a>
+              ))}
+            </div>
+          </section>
+        )}
+
+        <section class="side-panel">
+          <header class="panel-head">
+            <h2>Other brands</h2>
+            <a href="/brands">All <span aria-hidden="true">→</span></a>
+          </header>
+          <div class="other-brands">
+            {otherBrands.map((other) => (
+              <a href={`/brands/${other.slug}`}>
+                <span class="other-monogram" aria-hidden="true">{other.name.slice(0, 1)}</span>
+                <span>{other.name}</span>
+                <small>{phones.filter((phone) => phone.manufacturer === other.slug).length}</small>
+              </a>
+            ))}
+          </div>
+        </section>
+
+        <section class="side-cta">
+          <span class="side-cta-eyebrow">Stay current</span>
+          <h2>Follow the {brand.name} story.</h2>
+          <p>Launches, reviews and comparison coverage from across the mobile industry.</p>
+          <a href="/news">Read the latest news <span aria-hidden="true">→</span></a>
+        </section>
+      </aside>
     </div>
 
-    <article class="panel" style="margin-bottom: 2rem;">
-      <p>{brand.description}</p>
-    </article>
-
-    <div class="section-header">
-      <h2>{phonesForBrand.length} devices</h2>
-    </div>
-    <div class="grid-4">
-      {phonesForBrand.map((phone) => <PhoneCard phone={phone} />)}
-    </div>
+    <p class="catalog-notice">Sample catalog data. Manufacturer descriptions, prices and device counts are illustrative.</p>
   </div>
 </BaseLayout>
+
+<style>
+  :global(body) {
+    background: #eef1f4;
+    font-family: 'Segoe UI', system-ui, -apple-system, BlinkMacSystemFont, Arial, sans-serif;
+  }
+
+  .brand-page {
+    --ink: #1b212a;
+    --line: #dbe0e7;
+    --accent: #e9542d;
+    width: 100%;
+    max-width: 1240px;
+    margin: 0 auto;
+    padding: 16px 18px 0;
+    color: var(--ink);
+  }
+
+  .crumbs {
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    margin-bottom: 12px;
+    color: #8a94a2;
+    font-size: 9px;
+    font-weight: 600;
+  }
+
+  .crumbs a {
+    color: #586575;
+    text-decoration: none;
+  }
+
+  .crumbs a:hover {
+    color: var(--accent);
+  }
+
+  .brand-hero {
+    position: relative;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 330px;
+    grid-template-rows: 1fr auto;
+    gap: 0 20px;
+    overflow: hidden;
+    min-height: 292px;
+    padding: 28px 30px 0;
+    border-radius: 11px;
+    background:
+      radial-gradient(circle at 80% 12%, rgba(255, 122, 80, 0.27) 0%, transparent 33%),
+      radial-gradient(circle at 10% 100%, rgba(38, 91, 140, 0.23) 0%, transparent 38%),
+      linear-gradient(120deg, #161b22 0%, #232b35 62%, #2c211d 100%);
+    color: #ffffff;
+    box-shadow: 0 20px 46px rgba(20, 26, 34, 0.15);
+    isolation: isolate;
+  }
+
+  .hero-grid {
+    position: absolute;
+    z-index: -1;
+    inset: 0;
+    background-image:
+      linear-gradient(rgba(255, 255, 255, 0.045) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(255, 255, 255, 0.04) 1px, transparent 1px);
+    background-size: 44px 44px;
+    mask-image: linear-gradient(90deg, rgba(0, 0, 0, 0.9), transparent 78%);
+  }
+
+  .hero-copy {
+    position: relative;
+    z-index: 2;
+    align-self: center;
+    max-width: 580px;
+    padding-bottom: 21px;
+  }
+
+  .hero-monogram {
+    display: grid;
+    width: 39px;
+    height: 39px;
+    margin-bottom: 10px;
+    place-items: center;
+    border-radius: 10px;
+    background: linear-gradient(145deg, #ff7a50 0%, #d9441f 100%);
+    color: #ffffff;
+    font-size: 16px;
+    font-weight: 800;
+    box-shadow: 0 8px 20px rgba(217, 68, 31, 0.32), 0 1px 0 rgba(255, 255, 255, 0.3) inset;
+    transform: rotate(-5deg);
+  }
+
+  .hero-eyebrow {
+    display: block;
+    margin-bottom: 7px;
+    color: #ffad90;
+    font-size: 8px;
+    font-weight: 800;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+  }
+
+  .brand-hero h1 {
+    margin: 0 0 7px;
+    color: #ffffff;
+    font-size: clamp(35px, 4.5vw, 52px);
+    font-weight: 700;
+    letter-spacing: -0.055em;
+    line-height: 0.98;
+  }
+
+  .brand-hero p {
+    max-width: 54ch;
+    margin: 0;
+    color: #b2bcc9;
+    font-size: 10.5px;
+    line-height: 1.55;
+  }
+
+  .hero-actions {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 13px;
+    margin-top: 15px;
+  }
+
+  .hero-site {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 8px 11px;
+    border: 1px solid rgba(255, 255, 255, 0.18);
+    border-radius: 3px;
+    background: rgba(255, 255, 255, 0.08);
+    color: #ffffff;
+    font-size: 8.5px;
+    font-weight: 800;
+    letter-spacing: 0.04em;
+    text-decoration: none;
+    text-transform: uppercase;
+    backdrop-filter: blur(6px);
+  }
+
+  .hero-site:hover {
+    background: rgba(255, 255, 255, 0.14);
+    text-decoration: none;
+  }
+
+  .hero-directory {
+    color: #c2ccd9;
+    font-size: 8.5px;
+    font-weight: 700;
+    text-decoration: underline;
+    text-underline-offset: 3px;
+  }
+
+  .hero-directory:hover {
+    color: #ffffff;
+  }
+
+  .hero-stats {
+    grid-column: 1 / -1;
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 0;
+    min-height: 56px;
+    margin: 0 -30px;
+    padding: 0 30px;
+    border-top: 1px solid rgba(255, 255, 255, 0.1);
+    background: rgba(7, 11, 17, 0.26);
+    backdrop-filter: blur(8px);
+  }
+
+  .hero-stats span {
+    display: inline-flex;
+    align-items: baseline;
+    gap: 5px;
+    padding: 0 20px;
+    border-right: 1px solid rgba(255, 255, 255, 0.09);
+    color: #8793a3;
+    font-size: 8px;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+  }
+
+  .hero-stats span:first-child {
+    padding-left: 0;
+  }
+
+  .hero-stats span:last-child {
+    border-right: 0;
+  }
+
+  .hero-stats strong {
+    color: #ffffff;
+    font-size: 13px;
+    font-weight: 800;
+    letter-spacing: -0.02em;
+    text-transform: none;
+  }
+
+  .hero-visual {
+    position: relative;
+    z-index: 1;
+    display: flex;
+    align-items: flex-end;
+    justify-content: center;
+    min-height: 224px;
+    padding-bottom: 18px;
+  }
+
+  .visual-phone {
+    display: block;
+    filter: drop-shadow(0 18px 24px rgba(0, 0, 0, 0.32));
+  }
+
+  .visual-phone--front {
+    position: relative;
+    z-index: 2;
+    transform: rotate(-3deg) translateX(-14px);
+  }
+
+  .visual-phone--back {
+    position: absolute;
+    z-index: 1;
+    right: 24px;
+    bottom: 10px;
+    opacity: 0.55;
+    transform: rotate(8deg);
+  }
+
+  .visual-ring {
+    position: absolute;
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 50%;
+  }
+
+  .visual-ring--one {
+    width: 230px;
+    height: 230px;
+    bottom: 2px;
+    box-shadow: 0 0 0 28px rgba(255, 255, 255, 0.022);
+  }
+
+  .visual-ring--two {
+    width: 160px;
+    height: 160px;
+    bottom: 40px;
+    border-color: rgba(255, 122, 80, 0.17);
+  }
+
+  .visual-word {
+    position: absolute;
+    right: 0;
+    bottom: -9px;
+    color: rgba(255, 255, 255, 0.035);
+    font-size: 48px;
+    font-weight: 800;
+    letter-spacing: -0.06em;
+    line-height: 1;
+    pointer-events: none;
+  }
+
+  .brand-layout {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 304px;
+    gap: 14px;
+    align-items: start;
+    margin-top: 14px;
+  }
+
+  .brand-main,
+  .brand-side {
+    display: grid;
+    gap: 14px;
+    min-width: 0;
+  }
+
+  .phones-panel,
+  .side-panel {
+    overflow: hidden;
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    background: #ffffff;
+    box-shadow: 0 1px 2px rgba(23, 32, 44, 0.035), 0 10px 24px rgba(23, 32, 44, 0.025);
+  }
+
+  .panel-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    min-height: 36px;
+    padding: 0 12px;
+    border-bottom: 1px solid #343b45;
+    background: linear-gradient(180deg, #3b434f 0%, #2d343e 100%);
+    color: #ffffff;
+  }
+
+  .panel-head h2 {
+    position: relative;
+    margin: 0;
+    padding-left: 9px;
+    color: #ffffff;
+    font-size: 10px;
+    font-weight: 800;
+    letter-spacing: 0.075em;
+    text-transform: uppercase;
+  }
+
+  .panel-head h2::before {
+    position: absolute;
+    top: 50%;
+    left: 0;
+    width: 3px;
+    height: 12px;
+    border-radius: 999px;
+    background: #ff7a50;
+    content: '';
+    transform: translateY(-50%);
+  }
+
+  .panel-head > span,
+  .panel-head > a {
+    color: #aeb9c8;
+    font-size: 8px;
+    font-weight: 600;
+    letter-spacing: 0.025em;
+    text-decoration: none;
+  }
+
+  .panel-head > a:hover {
+    color: #ffffff;
+  }
+
+  .brand-phone-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(182px, 1fr));
+    gap: 10px;
+    padding: 12px;
+  }
+
+  .empty-brand {
+    display: grid;
+    justify-items: center;
+    gap: 6px;
+    padding: 48px 24px;
+    text-align: center;
+  }
+
+  .empty-glyph {
+    display: grid;
+    width: 42px;
+    height: 42px;
+    margin-bottom: 3px;
+    place-items: center;
+    border-radius: 50%;
+    background: #fff1eb;
+    color: #d9441f;
+    font-size: 20px;
+    font-weight: 800;
+  }
+
+  .empty-brand h3 {
+    margin: 0;
+    color: #2a333e;
+    font-size: 14px;
+    font-weight: 700;
+  }
+
+  .empty-brand p {
+    max-width: 42ch;
+    margin: 0;
+    color: #7b8694;
+    font-size: 9.5px;
+    line-height: 1.5;
+  }
+
+  .empty-brand a {
+    margin-top: 6px;
+    padding: 7px 10px;
+    border-radius: 3px;
+    background: #1f262f;
+    color: #ffffff;
+    font-size: 8px;
+    font-weight: 800;
+    letter-spacing: 0.05em;
+    text-decoration: none;
+    text-transform: uppercase;
+  }
+
+  .empty-brand a:hover {
+    background: #e9542d;
+    text-decoration: none;
+  }
+
+  .compare-strip {
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 20px;
+    overflow: hidden;
+    padding: 22px 24px;
+    border-radius: 8px;
+    background:
+      radial-gradient(circle at 90% 0%, rgba(255, 122, 80, 0.3) 0%, transparent 36%),
+      linear-gradient(140deg, #29313c 0%, #151a21 100%);
+    color: #ffffff;
+    box-shadow: 0 16px 36px rgba(20, 26, 34, 0.12);
+  }
+
+  .compare-strip > div:first-child {
+    max-width: 560px;
+  }
+
+  .compare-eyebrow {
+    display: block;
+    margin-bottom: 6px;
+    color: #ffad90;
+    font-size: 8px;
+    font-weight: 800;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+  }
+
+  .compare-strip h2 {
+    margin: 0 0 5px;
+    color: #ffffff;
+    font-size: 20px;
+    font-weight: 700;
+    letter-spacing: -0.035em;
+    line-height: 1.12;
+  }
+
+  .compare-strip p {
+    margin: 0;
+    color: #aab4c2;
+    font-size: 9.5px;
+    line-height: 1.5;
+  }
+
+  .compare-actions {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 8px;
+    flex-shrink: 0;
+  }
+
+  .compare-primary {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 9px 12px;
+    border-radius: 3px;
+    background: linear-gradient(180deg, #f7623a, #d9441f);
+    color: #ffffff;
+    font-size: 8.5px;
+    font-weight: 800;
+    letter-spacing: 0.04em;
+    text-decoration: none;
+    text-transform: uppercase;
+    box-shadow: 0 4px 12px rgba(217, 68, 31, 0.22);
+  }
+
+  .compare-primary:hover {
+    filter: brightness(1.07);
+    text-decoration: none;
+  }
+
+  .compare-secondary {
+    color: #aab4c2;
+    font-size: 8px;
+    font-weight: 600;
+    text-decoration: underline;
+    text-underline-offset: 3px;
+  }
+
+  .compare-secondary:hover {
+    color: #ffb499;
+  }
+
+  .profile-body {
+    display: grid;
+    grid-template-columns: 39px minmax(0, 1fr);
+    gap: 3px 10px;
+    padding: 14px;
+  }
+
+  .profile-monogram {
+    display: grid;
+    width: 39px;
+    height: 39px;
+    place-items: center;
+    border-radius: 9px;
+    background: linear-gradient(145deg, #2d3540, #171c23);
+    color: #ff9b7b;
+    font-size: 15px;
+    font-weight: 800;
+    transform: rotate(-3deg);
+  }
+
+  .profile-name {
+    display: grid;
+    align-content: center;
+    gap: 1px;
+  }
+
+  .profile-name strong {
+    color: #2a333e;
+    font-size: 12px;
+    font-weight: 700;
+  }
+
+  .profile-name span {
+    color: #98a2ae;
+    font-size: 8px;
+  }
+
+  .profile-body > p {
+    grid-column: 1 / -1;
+    margin: 8px 0 9px;
+    color: #7b8694;
+    font-size: 8.5px;
+    line-height: 1.55;
+  }
+
+  .profile-facts {
+    grid-column: 1 / -1;
+    margin: 0;
+    border-top: 1px solid #edf0f3;
+  }
+
+  .profile-facts > div {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 9px;
+    padding: 7px 0;
+    border-bottom: 1px solid #edf0f3;
+  }
+
+  .profile-facts > div:last-child {
+    border-bottom: 0;
+    padding-bottom: 0;
+  }
+
+  .profile-facts dt {
+    color: #98a2ae;
+    font-size: 8px;
+  }
+
+  .profile-facts dd {
+    margin: 0;
+    color: #3a4553;
+    font-size: 8.5px;
+    font-weight: 700;
+    text-align: right;
+  }
+
+  .profile-facts a {
+    color: #c04928;
+    text-decoration: none;
+  }
+
+  .profile-facts a:hover {
+    color: #e9542d;
+  }
+
+  .top-rated-list {
+    display: grid;
+  }
+
+  .top-rated-row {
+    display: grid;
+    grid-template-columns: 19px 21px minmax(0, 1fr) auto;
+    align-items: center;
+    gap: 7px;
+    padding: 8px 11px;
+    border-bottom: 1px solid #edf0f3;
+    color: inherit;
+    text-decoration: none;
+    transition: background 140ms;
+  }
+
+  .top-rated-row:last-child {
+    border-bottom: 0;
+  }
+
+  .top-rated-row:hover {
+    background: #f8f9fb;
+    text-decoration: none;
+  }
+
+  .top-rated-rank {
+    color: #c2cad4;
+    font-size: 8.5px;
+    font-weight: 800;
+  }
+
+  .top-rated-art {
+    display: grid;
+    place-items: center;
+  }
+
+  .top-rated-copy {
+    display: grid;
+    gap: 1px;
+    min-width: 0;
+  }
+
+  .top-rated-copy strong {
+    overflow: hidden;
+    color: #38424f;
+    font-size: 8.5px;
+    font-weight: 700;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .top-rated-row:hover .top-rated-copy strong {
+    color: #c63c1b;
+  }
+
+  .top-rated-copy small {
+    color: #98a2ae;
+    font-size: 7px;
+  }
+
+  .top-rated-score {
+    color: #d9441f;
+    font-size: 7.5px;
+    font-weight: 800;
+    white-space: nowrap;
+  }
+
+  .other-brands {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .other-brands a {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 8px 10px;
+    border-right: 1px solid #edf0f3;
+    border-bottom: 1px solid #edf0f3;
+    color: #596575;
+    font-size: 8.5px;
+    font-weight: 600;
+    text-decoration: none;
+    transition: background 140ms;
+  }
+
+  .other-brands a:nth-child(2n) {
+    border-right: 0;
+  }
+
+  .other-brands a:nth-last-child(-n + 2) {
+    border-bottom: 0;
+  }
+
+  .other-brands a:hover {
+    background: #f8f9fb;
+    color: #c63c1b;
+    text-decoration: none;
+  }
+
+  .other-monogram {
+    display: grid;
+    width: 18px;
+    height: 18px;
+    flex-shrink: 0;
+    place-items: center;
+    border-radius: 50%;
+    background: #f2f4f7;
+    color: #8993a0;
+    font-size: 7px;
+    font-weight: 800;
+  }
+
+  .other-brands small {
+    margin-left: auto;
+    color: #b0b9c4;
+    font-size: 6.5px;
+    font-weight: 700;
+  }
+
+  .side-cta {
+    position: relative;
+    overflow: hidden;
+    padding: 18px 16px;
+    border-radius: 8px;
+    background:
+      radial-gradient(circle at 90% 0%, rgba(255, 122, 80, 0.34) 0%, transparent 38%),
+      linear-gradient(145deg, #29313c 0%, #151a21 100%);
+    color: #ffffff;
+    box-shadow: 0 16px 34px rgba(20, 26, 34, 0.12);
+  }
+
+  .side-cta-eyebrow {
+    display: block;
+    margin-bottom: 6px;
+    color: #ffad90;
+    font-size: 8px;
+    font-weight: 800;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+  }
+
+  .side-cta h2 {
+    max-width: 16ch;
+    margin: 0 0 6px;
+    color: #ffffff;
+    font-size: 17px;
+    font-weight: 700;
+    letter-spacing: -0.03em;
+    line-height: 1.16;
+  }
+
+  .side-cta p {
+    margin: 0 0 11px;
+    color: #aab4c2;
+    font-size: 9px;
+    line-height: 1.5;
+  }
+
+  .side-cta a {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    color: #ffb499;
+    font-size: 8.5px;
+    font-weight: 800;
+    letter-spacing: 0.04em;
+    text-decoration: none;
+    text-transform: uppercase;
+  }
+
+  .side-cta a:hover {
+    color: #ffffff;
+  }
+
+  .catalog-notice {
+    margin: 16px 0 0;
+    color: #9aa4b1;
+    font-size: 8px;
+    text-align: center;
+  }
+
+  @media (max-width: 980px) {
+    .brand-hero {
+      grid-template-columns: minmax(0, 1fr) 250px;
+      padding-left: 24px;
+      padding-right: 24px;
+    }
+
+    .hero-stats {
+      margin-left: -24px;
+      margin-right: -24px;
+      padding-left: 24px;
+      padding-right: 24px;
+    }
+
+    .brand-layout {
+      grid-template-columns: minmax(0, 1fr) 272px;
+    }
+
+    .brand-phone-grid {
+      grid-template-columns: repeat(auto-fill, minmax(170px, 1fr));
+    }
+  }
+
+  @media (max-width: 780px) {
+    .brand-hero {
+      grid-template-columns: 1fr;
+      padding: 24px 20px 0;
+    }
+
+    .hero-copy {
+      max-width: 100%;
+      padding-bottom: 18px;
+    }
+
+    .hero-visual {
+      position: absolute;
+      top: 18px;
+      right: -20px;
+      width: 220px;
+      min-height: 0;
+      opacity: 0.32;
+      transform: scale(0.8);
+      transform-origin: top right;
+    }
+
+    .hero-stats {
+      grid-column: 1;
+      margin: 0 -20px;
+      padding: 0 20px;
+    }
+
+    .brand-layout {
+      grid-template-columns: 1fr;
+    }
+
+    .brand-side {
+      grid-template-columns: 1fr 1fr;
+      align-items: start;
+    }
+
+    .side-cta {
+      grid-column: 1 / -1;
+    }
+  }
+
+  @media (max-width: 560px) {
+    .brand-page {
+      padding: 12px 12px 0;
+    }
+
+    .brand-hero {
+      padding: 21px 17px 0;
+    }
+
+    .brand-hero h1 {
+      font-size: 35px;
+    }
+
+    .hero-visual {
+      display: none;
+    }
+
+    .hero-stats {
+      margin: 0 -17px;
+      padding: 0 17px;
+      gap: 0;
+      flex-wrap: nowrap;
+      overflow-x: auto;
+    }
+
+    .hero-stats span {
+      flex-shrink: 0;
+      padding: 0 12px;
+    }
+
+    .hero-stats span:first-child {
+      padding-left: 0;
+    }
+
+    .hero-stats span:last-child {
+      display: none;
+    }
+
+    .brand-phone-grid {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 8px;
+      padding: 10px;
+    }
+
+    .brand-side {
+      grid-template-columns: 1fr;
+    }
+
+    .compare-strip {
+      align-items: flex-start;
+      flex-direction: column;
+      gap: 13px;
+      padding: 19px 17px;
+    }
+
+    .compare-actions {
+      align-items: flex-start;
+    }
+  }
+
+  @media (max-width: 430px) {
+    .brand-phone-grid {
+      grid-template-columns: 1fr;
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .top-rated-row,
+    .other-brands a {
+      transition: none;
+    }
+  }
+</style>

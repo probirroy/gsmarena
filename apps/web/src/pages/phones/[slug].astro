@@ -1,6 +1,8 @@
 ---
 import BaseLayout from '../../layouts/BaseLayout.astro';
-import { phones, manufacturers, getPhoneBySlug } from '../../data/catalog';
+import DeviceArt from '../../components/DeviceArt.astro';
+import PhoneCard from '../../components/PhoneCard.astro';
+import { phones, manufacturers, reviews, getPhoneBySlug } from '../../data/catalog';
 
 export function getStaticPaths() {
   return phones.map((phone) => ({ params: { slug: phone.slug } }));
@@ -13,77 +15,1480 @@ if (!phone) {
 }
 
 const manufacturer = manufacturers.find((brand) => brand.slug === phone.manufacturer);
-const related = phones.filter((item) => item.manufacturer === phone.manufacturer && item.slug !== phone.slug).slice(0, 3);
+const sameBrand = phones.filter((item) => item.manufacturer === phone.manufacturer && item.slug !== phone.slug);
+const related = (sameBrand.length >= 3
+  ? sameBrand
+  : [...sameBrand, ...phones.filter((item) => item.slug !== phone.slug && item.manufacturer !== phone.manufacturer)]
+).slice(0, 3);
+
+const matchingReview = reviews.find((review) =>
+  review.title.toLowerCase().includes(phone.name.toLowerCase().replace(/^samsung\s+/i, 'samsung '))
+);
+
+const priceValue = Number(phone.price.replace(/[^0-9]/g, ''));
+const alternatives = phones
+  .filter((item) => item.slug !== phone.slug)
+  .sort((a, b) => Math.abs(Number(a.price.replace(/[^0-9]/g, '')) - priceValue) - Math.abs(Number(b.price.replace(/[^0-9]/g, '')) - priceValue))
+  .slice(0, 4);
+
+const specGroups = [
+  {
+    title: 'Display',
+    icon: 'display',
+    rows: [
+      ['Panel', phone.specs.display],
+      ['Type', phone.display]
+    ]
+  },
+  {
+    title: 'Performance',
+    icon: 'chip',
+    rows: [
+      ['Processor', phone.specs.processor],
+      ['Chipset', phone.chipset],
+      ['Memory', phone.specs.ram],
+      ['Storage', phone.specs.storage]
+    ]
+  },
+  {
+    title: 'Battery & charging',
+    icon: 'battery',
+    rows: [
+      ['Capacity', phone.specs.battery],
+      ['Charging', phone.specs.charging]
+    ]
+  },
+  {
+    title: 'Camera',
+    icon: 'camera',
+    rows: [
+      ['System', phone.specs.camera],
+      ['Summary', phone.camera]
+    ]
+  },
+  {
+    title: 'Software & launch',
+    icon: 'software',
+    rows: [
+      ['Operating system', phone.os],
+      ['Announced', phone.announcementDate],
+      ['Released', phone.releaseDate]
+    ]
+  }
+];
 ---
 
-<BaseLayout title={`${phone.name} | TechAtlas`} description={`${phone.name} specs, pricing, highlights, and comparisons.`}>
-  <div class="page-shell">
-    <div class="breadcrumbs">Home / Phones / {phone.name}</div>
-    <div class="page-head">
-      <div>
+<BaseLayout title={`${phone.name} specs, price and review | TechAtlas`} description={`${phone.name}: ${phone.display}, ${phone.chipset}, ${phone.battery} and ${phone.camera}. Compare specs, pricing and alternatives.`}>
+  <div class="device-page">
+    <nav class="crumbs" aria-label="Breadcrumb">
+      <a href="/">Home</a><span aria-hidden="true">/</span>
+      <a href="/phones">Phones</a><span aria-hidden="true">/</span>
+      <span>{phone.name}</span>
+    </nav>
+
+    <header class="device-hero">
+      <span class="hero-grid" aria-hidden="true"></span>
+      <span class="hero-glow" aria-hidden="true"></span>
+
+      <div class="hero-copy">
+        <a class="brand-line" href={`/brands/${phone.manufacturer}`}>
+          {manufacturer?.name ?? phone.manufacturer}
+          <span aria-hidden="true">↗</span>
+        </a>
         <h1>{phone.name}</h1>
-        <p class="muted">{manufacturer?.name} • {phone.status} • {phone.releaseDate}</p>
-      </div>
-      <div class="stack">
-        <a href={`/compare?phones=${phone.slug}`} class="primary-button">Compare</a>
-        <a href="/phones" class="ghost-button">Back to phones</a>
-      </div>
-    </div>
-    <p class="catalog-notice">Sample record. Specifications and launch pricing require independent verification before publication.</p>
+        <p class="hero-tagline">{phone.highlights[0]} · {phone.highlights[1]} · {phone.highlights[2]}</p>
 
-    <div class="spec-grid">
-      <article class="panel">
-        <h2>Overview</h2>
-        <ul class="spec-list">
-          <li><span>Manufacturer</span><strong>{manufacturer?.name}</strong></li>
-          <li><span>Launch price</span><strong>{phone.price}</strong></li>
-          <li><span>Display</span><strong>{phone.display}</strong></li>
-          <li><span>Chipset</span><strong>{phone.chipset}</strong></li>
-          <li><span>Battery</span><strong>{phone.battery}</strong></li>
-          <li><span>Camera</span><strong>{phone.camera}</strong></li>
-        </ul>
+        <div class="hero-badges">
+          <span class:list={['status-badge', `status-badge--${phone.status.toLowerCase()}`]}>
+            <i aria-hidden="true"></i>{phone.status}
+          </span>
+          <span class="hero-meta">Announced {phone.announcementDate}</span>
+          <span class="hero-meta">{phone.os}</span>
+        </div>
+
+        <div class="hero-actions">
+          <a class="primary-action" href={`/compare?phones=${phone.slug},${related[0]?.slug ?? 'samsung-galaxy-s25-ultra'}`}>
+            Compare this phone
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" aria-hidden="true">
+              <path d="M8 4 4 8l4 4"></path><path d="M4 8h16"></path>
+              <path d="m16 20 4-4-4-4"></path><path d="M20 16H4"></path>
+            </svg>
+          </a>
+          <a class="secondary-action" href="#full-specs">Jump to specs</a>
+        </div>
+      </div>
+
+      <div class="hero-visual" aria-hidden="true">
+        <span class="visual-ring visual-ring--one"></span>
+        <span class="visual-ring visual-ring--two"></span>
+        <span class="visual-plinth"></span>
+        <span class="visual-device">
+          <DeviceArt name={phone.name} slug={phone.slug} manufacturer={phone.manufacturer} size="hero" width={196} />
+        </span>
+        <span class="visual-label">TECHATLAS / {phone.manufacturer.toUpperCase()}</span>
+      </div>
+
+      <div class="hero-summary">
+        <div class="summary-price">
+          <span>Launch price</span>
+          <strong>{phone.price}</strong>
+          <small>Sample pricing</small>
+        </div>
+        <div class="summary-rating">
+          <span>Editor rating</span>
+          <strong>{phone.rating}<small>/5</small></strong>
+          <span class="rating-stars" aria-hidden="true">★★★★★</span>
+        </div>
+        <a class="summary-review" href={matchingReview ? `/reviews/${matchingReview.slug}` : '/reviews'}>
+          {matchingReview ? `Read the ${matchingReview.score}/10 review` : 'Browse phone reviews'}
+          <span aria-hidden="true">→</span>
+        </a>
+      </div>
+    </header>
+
+    <section class="highlight-strip" aria-label="Key specifications">
+      <article class="highlight-card">
+        <span class="highlight-icon" aria-hidden="true">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9"><rect x="3" y="4" width="18" height="14" rx="2"></rect><path d="M8 21h8M12 18v3"></path></svg>
+        </span>
+        <span class="highlight-label">Display</span>
+        <strong>{phone.display}</strong>
       </article>
-
-      <article class="panel">
-        <h2>Highlights</h2>
-        <ul>
-          {phone.highlights.map((feature) => <li>{feature}</li>)}
-        </ul>
+      <article class="highlight-card">
+        <span class="highlight-icon" aria-hidden="true">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9"><rect x="7" y="7" width="10" height="10" rx="1.5"></rect><path d="M9 2v3M15 2v3M9 19v3M15 19v3M2 9h3M2 15h3M19 9h3M19 15h3"></path></svg>
+        </span>
+        <span class="highlight-label">Chipset</span>
+        <strong>{phone.chipset}</strong>
       </article>
-    </div>
-
-    <section class="section">
-      <div class="section-header">
-        <h2>Full specification summary</h2>
-      </div>
-      <ul class="spec-list">
-        <li><span>Operating system</span><strong>{phone.os}</strong></li>
-        <li><span>Display</span><strong>{phone.specs.display}</strong></li>
-        <li><span>Processor</span><strong>{phone.specs.processor}</strong></li>
-        <li><span>RAM</span><strong>{phone.specs.ram}</strong></li>
-        <li><span>Storage</span><strong>{phone.specs.storage}</strong></li>
-        <li><span>Battery</span><strong>{phone.specs.battery}</strong></li>
-        <li><span>Charging</span><strong>{phone.specs.charging}</strong></li>
-        <li><span>Camera</span><strong>{phone.specs.camera}</strong></li>
-      </ul>
+      <article class="highlight-card">
+        <span class="highlight-icon" aria-hidden="true">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9"><rect x="3" y="7" width="16" height="10" rx="2"></rect><path d="M21 10v4"></path><path d="M7 10v4"></path></svg>
+        </span>
+        <span class="highlight-label">Battery</span>
+        <strong>{phone.battery}</strong>
+      </article>
+      <article class="highlight-card">
+        <span class="highlight-icon" aria-hidden="true">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9"><rect x="3" y="6" width="18" height="13" rx="2"></rect><circle cx="12" cy="12.5" r="3.4"></circle><path d="M8 6l1.3-2h5.4L16 6"></path></svg>
+        </span>
+        <span class="highlight-label">Camera</span>
+        <strong>{phone.camera}</strong>
+      </article>
     </section>
 
-    <section class="section">
-      <div class="section-header">
-        <h2>Related devices</h2>
-      </div>
-      <div class="grid-3">
-        {related.map((relatedPhone) => (
-          <article class="phone-card">
-            <h3><a href={`/phones/${relatedPhone.slug}`}>{relatedPhone.name}</a></h3>
-            <p class="muted">{relatedPhone.display}</p>
-            <div class="card-footer">
-              <strong>{relatedPhone.price}</strong>
-              <a href={`/compare?phones=${phone.slug},${relatedPhone.slug}`} class="inline-link">Compare</a>
+    <div class="device-layout">
+      <main class="device-main">
+        <section class="content-panel" id="full-specs" aria-labelledby="specs-title">
+          <header class="panel-head">
+            <h2 id="specs-title">Full specifications</h2>
+            <span>Illustrative catalog data</span>
+          </header>
+          <div class="spec-groups">
+            {specGroups.map((group) => (
+              <article class="spec-group">
+                <header class="spec-group-head">
+                  <span class="spec-icon" aria-hidden="true">
+                    {group.icon === 'display' && <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="14" rx="2"></rect><path d="M8 21h8M12 18v3"></path></svg>}
+                    {group.icon === 'chip' && <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="7" y="7" width="10" height="10" rx="1.5"></rect><path d="M9 2v3M15 2v3M9 19v3M15 19v3M2 9h3M2 15h3M19 9h3M19 15h3"></path></svg>}
+                    {group.icon === 'battery' && <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="7" width="16" height="10" rx="2"></rect><path d="M21 10v4"></path></svg>}
+                    {group.icon === 'camera' && <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="6" width="18" height="13" rx="2"></rect><circle cx="12" cy="12.5" r="3.4"></circle><path d="M8 6l1.3-2h5.4L16 6"></path></svg>}
+                    {group.icon === 'software' && <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m8 8-4 4 4 4"></path><path d="m16 8 4 4-4 4"></path><path d="m13 5-2 14"></path></svg>}
+                  </span>
+                  <h3>{group.title}</h3>
+                </header>
+                <dl class="spec-table">
+                  {group.rows.map(([label, value]) => (
+                    <div class="spec-row">
+                      <dt>{label}</dt>
+                      <dd>{value}</dd>
+                    </div>
+                  ))}
+                </dl>
+              </article>
+            ))}
+          </div>
+        </section>
+
+        <section class="content-panel highlights-panel" aria-labelledby="highlights-title">
+          <header class="panel-head">
+            <h2 id="highlights-title">Why it stands out</h2>
+            <span>Editor's notes</span>
+          </header>
+          <div class="highlight-list">
+            {phone.highlights.map((feature, index) => (
+              <article class="highlight-item">
+                <span class="highlight-number">{String(index + 1).padStart(2, '0')}</span>
+                <div>
+                  <h3>{feature}</h3>
+                  <p>A considered part of the {phone.name} story — checked against the specification sheet and the way the phone is likely to be used day to day.</p>
+                </div>
+              </article>
+            ))}
+          </div>
+        </section>
+
+        {matchingReview && (
+          <a class="review-callout" href={`/reviews/${matchingReview.slug}`}>
+            <span class="callout-score">{matchingReview.score}<small>/10</small></span>
+            <span class="callout-copy">
+              <span class="callout-eyebrow">TechAtlas review verdict</span>
+              <strong>{matchingReview.title}</strong>
+              <span>{matchingReview.excerpt}</span>
+              <small>By {matchingReview.author} · {matchingReview.publishedAt}</small>
+            </span>
+            <span class="callout-arrow" aria-hidden="true">→</span>
+          </a>
+        )}
+      </main>
+
+      <aside class="device-side" aria-label="Buying information and alternatives">
+        <section class="side-panel price-panel">
+          <header class="panel-head">
+            <h2>Price & availability</h2>
+          </header>
+          <div class="price-body">
+            <span class="price-label">Expected launch price</span>
+            <strong class="price-value">{phone.price}</strong>
+            <p>Representative sample price for this demo catalog. Confirm with a retailer before buying.</p>
+            <dl class="price-facts">
+              <div><dt>Status</dt><dd>{phone.status}</dd></div>
+              <div><dt>Released</dt><dd>{phone.releaseDate}</dd></div>
+              <div><dt>Platform</dt><dd>{phone.os}</dd></div>
+            </dl>
+            <a class="price-cta" href={`/compare?phones=${phone.slug},${alternatives[0]?.slug ?? 'iphone-16-pro-max'}`}>
+              Compare before you buy
+              <span aria-hidden="true">→</span>
+            </a>
+          </div>
+        </section>
+
+        <section class="side-panel brand-panel">
+          <header class="panel-head">
+            <h2>About {manufacturer?.name ?? 'the brand'}</h2>
+          </header>
+          <div class="brand-body">
+            <span class="brand-monogram">{(manufacturer?.name ?? phone.manufacturer).slice(0, 1)}</span>
+            <div>
+              <strong>{manufacturer?.name ?? phone.manufacturer}</strong>
+              <small>{manufacturer?.country}</small>
             </div>
-          </article>
-        ))}
+            <p>{manufacturer?.description}</p>
+            <a href={`/brands/${phone.manufacturer}`}>See every {manufacturer?.name} phone <span aria-hidden="true">→</span></a>
+          </div>
+        </section>
+
+        <section class="side-panel alternatives-panel">
+          <header class="panel-head">
+            <h2>Close alternatives</h2>
+            <span>By price</span>
+          </header>
+          <div class="alt-list">
+            {alternatives.map((alt) => (
+              <a class="alt-row" href={`/phones/${alt.slug}`}>
+                <span class="alt-art">
+                  <DeviceArt name={alt.name} slug={alt.slug} manufacturer={alt.manufacturer} size="xs" width={20} />
+                </span>
+                <span class="alt-copy">
+                  <strong>{alt.name}</strong>
+                  <small>{alt.chipset}</small>
+                </span>
+                <span class="alt-price">{alt.price}</span>
+              </a>
+            ))}
+          </div>
+        </section>
+
+        <section class="side-cta">
+          <span class="side-cta-eyebrow">Decision helper</span>
+          <h2>Not sure this is the one?</h2>
+          <p>Put it beside any other phone and compare the specs that matter to you.</p>
+          <a href="/compare">Open the comparison tool <span aria-hidden="true">→</span></a>
+        </section>
+      </aside>
+    </div>
+
+    <section class="related-section" aria-labelledby="related-title">
+      <header class="related-head">
+        <div>
+          <span class="eyebrow">Keep exploring</span>
+          <h2 id="related-title">Related phones</h2>
+        </div>
+        <a href="/phones">See the full directory <span aria-hidden="true">→</span></a>
+      </header>
+      <div class="related-grid">
+        {related.map((relatedPhone) => <PhoneCard phone={relatedPhone} />)}
       </div>
     </section>
+
+    <p class="catalog-notice">Sample record. Specifications and launch pricing require independent verification before publication.</p>
   </div>
 </BaseLayout>
+
+<style>
+  :global(body) {
+    background: #eef1f4;
+    font-family: 'Segoe UI', system-ui, -apple-system, BlinkMacSystemFont, Arial, sans-serif;
+  }
+
+  .device-page {
+    --ink: #1b212a;
+    --muted: #6e7887;
+    --line: #dbe0e7;
+    --accent: #e9542d;
+    width: 100%;
+    max-width: 1240px;
+    margin: 0 auto;
+    padding: 16px 18px 0;
+    color: var(--ink);
+  }
+
+  .crumbs {
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    margin-bottom: 12px;
+    color: #8a94a2;
+    font-size: 9px;
+    font-weight: 600;
+  }
+
+  .crumbs a {
+    color: #586575;
+    text-decoration: none;
+  }
+
+  .crumbs a:hover {
+    color: var(--accent);
+  }
+
+  .device-hero {
+    position: relative;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 300px;
+    grid-template-rows: 1fr auto;
+    gap: 0 18px;
+    overflow: hidden;
+    min-height: 338px;
+    padding: 28px 30px 0;
+    border-radius: 11px;
+    background:
+      radial-gradient(circle at 78% 18%, rgba(255, 122, 80, 0.26) 0%, transparent 32%),
+      radial-gradient(circle at 10% 100%, rgba(38, 91, 140, 0.24) 0%, transparent 38%),
+      linear-gradient(120deg, #161b22 0%, #232b35 62%, #2c211d 100%);
+    color: #ffffff;
+    box-shadow: 0 20px 46px rgba(20, 26, 34, 0.15);
+    isolation: isolate;
+  }
+
+  .hero-grid {
+    position: absolute;
+    z-index: -1;
+    inset: 0;
+    background-image:
+      linear-gradient(rgba(255, 255, 255, 0.045) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(255, 255, 255, 0.04) 1px, transparent 1px);
+    background-size: 44px 44px;
+    mask-image: linear-gradient(90deg, rgba(0, 0, 0, 0.9), transparent 78%);
+  }
+
+  .hero-glow {
+    position: absolute;
+    z-index: -1;
+    top: 10%;
+    right: 12%;
+    width: 280px;
+    height: 280px;
+    border-radius: 50%;
+    background: rgba(233, 84, 45, 0.16);
+    filter: blur(50px);
+  }
+
+  .hero-copy {
+    position: relative;
+    z-index: 2;
+    align-self: center;
+    max-width: 620px;
+    padding-bottom: 24px;
+  }
+
+  .brand-line {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    margin-bottom: 9px;
+    color: #ffad90;
+    font-size: 8px;
+    font-weight: 800;
+    letter-spacing: 0.12em;
+    text-decoration: none;
+    text-transform: uppercase;
+  }
+
+  .brand-line:hover {
+    color: #ffffff;
+    text-decoration: none;
+  }
+
+  .hero-copy h1 {
+    max-width: 15ch;
+    margin: 0 0 9px;
+    color: #ffffff;
+    font-size: clamp(30px, 4vw, 48px);
+    font-weight: 700;
+    letter-spacing: -0.05em;
+    line-height: 0.98;
+    text-shadow: 0 2px 18px rgba(0, 0, 0, 0.3);
+  }
+
+  .hero-tagline {
+    max-width: 54ch;
+    margin: 0 0 14px;
+    color: #b6c0cd;
+    font-size: 10.5px;
+    line-height: 1.55;
+  }
+
+  .hero-badges {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin-bottom: 16px;
+  }
+
+  .status-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 5px 8px;
+    border: 1px solid rgba(255, 255, 255, 0.18);
+    border-radius: 3px;
+    background: rgba(8, 12, 18, 0.4);
+    color: #d8ffe8;
+    font-size: 8px;
+    font-weight: 800;
+    letter-spacing: 0.07em;
+    text-transform: uppercase;
+    backdrop-filter: blur(6px);
+  }
+
+  .status-badge i {
+    width: 5px;
+    height: 5px;
+    border-radius: 50%;
+    background: #5ee29a;
+    box-shadow: 0 0 0 3px rgba(94, 226, 154, 0.16);
+  }
+
+  .status-badge--upcoming {
+    color: #ffe6b0;
+  }
+
+  .status-badge--upcoming i {
+    background: #ffc65c;
+    box-shadow: 0 0 0 3px rgba(255, 198, 92, 0.16);
+  }
+
+  .status-badge--rumored {
+    color: #c9dcff;
+  }
+
+  .status-badge--rumored i {
+    background: #7fa7ff;
+    box-shadow: 0 0 0 3px rgba(127, 167, 255, 0.16);
+  }
+
+  .hero-meta {
+    color: #8793a3;
+    font-size: 8px;
+    font-weight: 600;
+    letter-spacing: 0.02em;
+  }
+
+  .hero-actions {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 13px;
+  }
+
+  .primary-action {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 9px 12px;
+    border-radius: 3px;
+    background: linear-gradient(180deg, #f7623a, #d9441f);
+    color: #ffffff;
+    font-size: 9px;
+    font-weight: 800;
+    letter-spacing: 0.05em;
+    text-decoration: none;
+    text-transform: uppercase;
+    box-shadow: 0 5px 14px rgba(217, 68, 31, 0.25);
+  }
+
+  .primary-action:hover {
+    filter: brightness(1.07);
+    text-decoration: none;
+  }
+
+  .secondary-action {
+    color: #c2ccd9;
+    font-size: 9px;
+    font-weight: 700;
+    text-decoration: underline;
+    text-underline-offset: 3px;
+  }
+
+  .secondary-action:hover {
+    color: #ffffff;
+  }
+
+  .hero-visual {
+    position: relative;
+    z-index: 1;
+    display: grid;
+    justify-items: center;
+    align-items: end;
+    min-height: 268px;
+    padding-bottom: 20px;
+  }
+
+  .visual-device {
+    position: relative;
+    z-index: 3;
+    display: block;
+    filter: drop-shadow(0 22px 30px rgba(0, 0, 0, 0.34));
+    transform: rotate(-2deg);
+  }
+
+  .visual-ring {
+    position: absolute;
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 50%;
+  }
+
+  .visual-ring--one {
+    width: 270px;
+    height: 270px;
+    bottom: 6px;
+    box-shadow: 0 0 0 28px rgba(255, 255, 255, 0.022), 0 0 0 56px rgba(255, 255, 255, 0.012);
+  }
+
+  .visual-ring--two {
+    width: 190px;
+    height: 190px;
+    bottom: 46px;
+    border-color: rgba(255, 122, 80, 0.16);
+  }
+
+  .visual-plinth {
+    position: absolute;
+    z-index: 2;
+    bottom: 14px;
+    width: 170px;
+    height: 26px;
+    border-radius: 50%;
+    background: radial-gradient(ellipse, rgba(0, 0, 0, 0.42) 0%, transparent 70%);
+    filter: blur(5px);
+  }
+
+  .visual-label {
+    position: absolute;
+    right: 0;
+    bottom: -2px;
+    color: rgba(255, 255, 255, 0.22);
+    font-size: 6.5px;
+    font-weight: 800;
+    letter-spacing: 0.18em;
+    writing-mode: vertical-rl;
+    transform: rotate(180deg);
+  }
+
+  .hero-summary {
+    grid-column: 1 / -1;
+    display: flex;
+    align-items: stretch;
+    margin: 0 -30px;
+    border-top: 1px solid rgba(255, 255, 255, 0.1);
+    background: rgba(7, 11, 17, 0.28);
+    backdrop-filter: blur(8px);
+  }
+
+  .summary-price,
+  .summary-rating {
+    display: grid;
+    align-content: center;
+    gap: 1px;
+    min-width: 150px;
+    padding: 13px 20px;
+    border-right: 1px solid rgba(255, 255, 255, 0.09);
+  }
+
+  .summary-price > span,
+  .summary-rating > span:first-child {
+    color: #8793a3;
+    font-size: 7.5px;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+  }
+
+  .summary-price strong {
+    color: #ffffff;
+    font-size: 20px;
+    font-weight: 800;
+    letter-spacing: -0.04em;
+  }
+
+  .summary-price small {
+    color: #75808f;
+    font-size: 7px;
+  }
+
+  .summary-rating strong {
+    color: #ffffff;
+    font-size: 20px;
+    font-weight: 800;
+    letter-spacing: -0.04em;
+  }
+
+  .summary-rating strong small {
+    color: #8793a3;
+    font-size: 8px;
+    font-weight: 700;
+  }
+
+  .rating-stars {
+    color: #ff9b64;
+    font-size: 8px;
+    letter-spacing: 0.12em;
+  }
+
+  .summary-review {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    flex: 1;
+    min-width: 0;
+    padding: 13px 20px;
+    color: #c8d2df;
+    font-size: 9px;
+    font-weight: 700;
+    text-decoration: none;
+    transition: background 140ms, color 140ms;
+  }
+
+  .summary-review:hover {
+    background: rgba(233, 84, 45, 0.14);
+    color: #ffffff;
+    text-decoration: none;
+  }
+
+  .highlight-strip {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 10px;
+    margin: 14px 0;
+  }
+
+  .highlight-card {
+    display: grid;
+    gap: 2px;
+    min-width: 0;
+    padding: 12px 13px;
+    border: 1px solid var(--line);
+    border-radius: 7px;
+    background: #ffffff;
+    box-shadow: 0 1px 2px rgba(23, 32, 44, 0.03);
+  }
+
+  .highlight-icon {
+    display: grid;
+    width: 27px;
+    height: 27px;
+    margin-bottom: 4px;
+    place-items: center;
+    border-radius: 5px;
+    background: #fff1eb;
+    color: #d9441f;
+  }
+
+  .highlight-label {
+    color: #98a2ae;
+    font-size: 7px;
+    font-weight: 800;
+    letter-spacing: 0.09em;
+    text-transform: uppercase;
+  }
+
+  .highlight-card strong {
+    overflow: hidden;
+    color: #2a333e;
+    font-size: 10px;
+    font-weight: 700;
+    line-height: 1.35;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .device-layout {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 304px;
+    gap: 14px;
+    align-items: start;
+  }
+
+  .device-main,
+  .device-side {
+    display: grid;
+    gap: 14px;
+    min-width: 0;
+  }
+
+  .content-panel,
+  .side-panel {
+    overflow: hidden;
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    background: #ffffff;
+    box-shadow: 0 1px 2px rgba(23, 32, 44, 0.035), 0 10px 24px rgba(23, 32, 44, 0.025);
+  }
+
+  .panel-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    min-height: 36px;
+    padding: 0 12px;
+    border-bottom: 1px solid #343b45;
+    background: linear-gradient(180deg, #3b434f 0%, #2d343e 100%);
+    color: #ffffff;
+  }
+
+  .panel-head h2 {
+    position: relative;
+    margin: 0;
+    padding-left: 9px;
+    color: #ffffff;
+    font-size: 10px;
+    font-weight: 800;
+    letter-spacing: 0.075em;
+    text-transform: uppercase;
+  }
+
+  .panel-head h2::before {
+    position: absolute;
+    top: 50%;
+    left: 0;
+    width: 3px;
+    height: 12px;
+    border-radius: 999px;
+    background: #ff7a50;
+    content: '';
+    transform: translateY(-50%);
+  }
+
+  .panel-head > span {
+    color: #aeb9c8;
+    font-size: 8px;
+    font-weight: 600;
+    letter-spacing: 0.025em;
+    white-space: nowrap;
+  }
+
+  .spec-groups {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .spec-group {
+    min-width: 0;
+    border-bottom: 1px solid #edf0f3;
+  }
+
+  .spec-group:nth-child(odd) {
+    border-right: 1px solid #edf0f3;
+  }
+
+  .spec-group:last-child,
+  .spec-group:nth-last-child(2):nth-child(odd) {
+    border-bottom: 0;
+  }
+
+  .spec-group-head {
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    padding: 10px 13px 7px;
+    background: #fafbfc;
+    border-bottom: 1px solid #edf0f3;
+  }
+
+  .spec-icon {
+    display: grid;
+    width: 22px;
+    height: 22px;
+    place-items: center;
+    border-radius: 4px;
+    background: #fff1eb;
+    color: #d9441f;
+  }
+
+  .spec-group-head h3 {
+    margin: 0;
+    color: #3a4553;
+    font-size: 9px;
+    font-weight: 800;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+  }
+
+  .spec-table {
+    margin: 0;
+  }
+
+  .spec-row {
+    display: grid;
+    grid-template-columns: 84px minmax(0, 1fr);
+    gap: 9px;
+    padding: 8px 13px;
+    border-bottom: 1px solid #f0f2f5;
+  }
+
+  .spec-row:last-child {
+    border-bottom: 0;
+  }
+
+  .spec-row dt {
+    color: #98a2ae;
+    font-size: 8px;
+    font-weight: 600;
+  }
+
+  .spec-row dd {
+    margin: 0;
+    color: #343e4a;
+    font-size: 9.5px;
+    font-weight: 600;
+    line-height: 1.4;
+  }
+
+  .highlight-list {
+    display: grid;
+  }
+
+  .highlight-item {
+    display: grid;
+    grid-template-columns: 30px minmax(0, 1fr);
+    gap: 11px;
+    padding: 14px;
+    border-bottom: 1px solid #edf0f3;
+  }
+
+  .highlight-item:last-child {
+    border-bottom: 0;
+  }
+
+  .highlight-number {
+    display: grid;
+    width: 30px;
+    height: 30px;
+    place-items: center;
+    border-radius: 50%;
+    background: #f3f5f8;
+    color: #d9441f;
+    font-size: 9px;
+    font-weight: 800;
+  }
+
+  .highlight-item h3 {
+    margin: 1px 0 3px;
+    color: #29323d;
+    font-size: 11px;
+    font-weight: 700;
+  }
+
+  .highlight-item p {
+    max-width: 68ch;
+    margin: 0;
+    color: #7b8694;
+    font-size: 9.5px;
+    line-height: 1.55;
+  }
+
+  .review-callout {
+    display: grid;
+    grid-template-columns: 62px minmax(0, 1fr) 20px;
+    align-items: center;
+    gap: 15px;
+    overflow: hidden;
+    padding: 17px;
+    border-radius: 9px;
+    background:
+      radial-gradient(circle at 92% 0%, rgba(255, 122, 80, 0.28) 0%, transparent 36%),
+      linear-gradient(140deg, #2a323d 0%, #171c23 100%);
+    color: #ffffff;
+    text-decoration: none;
+    box-shadow: 0 14px 32px rgba(20, 26, 34, 0.12);
+  }
+
+  .review-callout:hover {
+    text-decoration: none;
+  }
+
+  .callout-score {
+    display: grid;
+    width: 58px;
+    height: 58px;
+    place-content: center;
+    justify-items: center;
+    border: 1px solid rgba(255, 122, 80, 0.4);
+    border-radius: 50%;
+    background: rgba(255, 122, 80, 0.13);
+    color: #ffb499;
+    font-size: 18px;
+    font-weight: 800;
+    letter-spacing: -0.04em;
+    line-height: 1;
+  }
+
+  .callout-score small {
+    margin-top: 2px;
+    color: #9d8f8a;
+    font-size: 7px;
+    font-weight: 700;
+  }
+
+  .callout-copy {
+    display: grid;
+    gap: 3px;
+    min-width: 0;
+  }
+
+  .callout-eyebrow {
+    color: #ffad90;
+    font-size: 7px;
+    font-weight: 800;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+  }
+
+  .callout-copy strong {
+    color: #ffffff;
+    font-size: 13px;
+    font-weight: 700;
+  }
+
+  .callout-copy > span:not(.callout-eyebrow) {
+    display: -webkit-box;
+    overflow: hidden;
+    color: #aab4c2;
+    font-size: 9px;
+    line-height: 1.45;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
+  }
+
+  .callout-copy small {
+    color: #75808f;
+    font-size: 7.5px;
+  }
+
+  .callout-arrow {
+    color: #ffad90;
+    font-size: 14px;
+  }
+
+  .price-body {
+    padding: 14px;
+  }
+
+  .price-label {
+    display: block;
+    color: #98a2ae;
+    font-size: 7.5px;
+    font-weight: 700;
+    letter-spacing: 0.07em;
+    text-transform: uppercase;
+  }
+
+  .price-value {
+    display: block;
+    margin: 2px 0 5px;
+    color: #202832;
+    font-size: 28px;
+    font-weight: 800;
+    letter-spacing: -0.05em;
+    line-height: 1;
+  }
+
+  .price-body > p {
+    margin: 0 0 13px;
+    color: #8a94a2;
+    font-size: 8.5px;
+    line-height: 1.5;
+  }
+
+  .price-facts {
+    display: grid;
+    gap: 0;
+    margin: 0 0 13px;
+    border-top: 1px solid #edf0f3;
+  }
+
+  .price-facts > div {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 9px;
+    padding: 7px 0;
+    border-bottom: 1px solid #edf0f3;
+  }
+
+  .price-facts dt {
+    color: #98a2ae;
+    font-size: 8.5px;
+  }
+
+  .price-facts dd {
+    margin: 0;
+    color: #3a4553;
+    font-size: 8.5px;
+    font-weight: 700;
+    text-align: right;
+  }
+
+  .price-cta {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    padding: 9px 11px;
+    border-radius: 4px;
+    background: linear-gradient(180deg, #f7623a, #d9441f);
+    color: #ffffff;
+    font-size: 8.5px;
+    font-weight: 800;
+    letter-spacing: 0.04em;
+    text-decoration: none;
+    text-transform: uppercase;
+    box-shadow: 0 4px 12px rgba(217, 68, 31, 0.22);
+  }
+
+  .price-cta:hover {
+    filter: brightness(1.07);
+    text-decoration: none;
+  }
+
+  .brand-body {
+    display: grid;
+    grid-template-columns: 34px minmax(0, 1fr);
+    gap: 4px 9px;
+    padding: 14px;
+  }
+
+  .brand-monogram {
+    display: grid;
+    width: 34px;
+    height: 34px;
+    grid-row: span 1;
+    place-items: center;
+    border-radius: 50%;
+    background: linear-gradient(145deg, #2d3540, #171c23);
+    color: #ff9b7b;
+    font-size: 13px;
+    font-weight: 800;
+  }
+
+  .brand-body > div {
+    display: grid;
+    align-content: center;
+    gap: 1px;
+  }
+
+  .brand-body strong {
+    color: #2a333e;
+    font-size: 11px;
+    font-weight: 700;
+  }
+
+  .brand-body small {
+    color: #98a2ae;
+    font-size: 8px;
+  }
+
+  .brand-body p {
+    grid-column: 1 / -1;
+    margin: 7px 0 9px;
+    color: #7b8694;
+    font-size: 8.5px;
+    line-height: 1.55;
+  }
+
+  .brand-body a {
+    grid-column: 1 / -1;
+    color: #c04928;
+    font-size: 8px;
+    font-weight: 800;
+    letter-spacing: 0.035em;
+    text-decoration: none;
+    text-transform: uppercase;
+  }
+
+  .brand-body a:hover {
+    color: #e9542d;
+  }
+
+  .alt-list {
+    display: grid;
+  }
+
+  .alt-row {
+    display: grid;
+    grid-template-columns: 27px minmax(0, 1fr) auto;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 11px;
+    border-bottom: 1px solid #edf0f3;
+    color: inherit;
+    text-decoration: none;
+    transition: background 140ms;
+  }
+
+  .alt-row:last-child {
+    border-bottom: 0;
+  }
+
+  .alt-row:hover {
+    background: #f8f9fb;
+    text-decoration: none;
+  }
+
+  .alt-art {
+    display: grid;
+    place-items: center;
+  }
+
+  .alt-copy {
+    display: grid;
+    gap: 1px;
+    min-width: 0;
+  }
+
+  .alt-copy strong {
+    overflow: hidden;
+    color: #38424f;
+    font-size: 9px;
+    font-weight: 700;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .alt-row:hover .alt-copy strong {
+    color: #c63c1b;
+  }
+
+  .alt-copy small {
+    overflow: hidden;
+    color: #98a2ae;
+    font-size: 7px;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .alt-price {
+    color: #596575;
+    font-size: 8.5px;
+    font-weight: 800;
+    white-space: nowrap;
+  }
+
+  .side-cta {
+    position: relative;
+    overflow: hidden;
+    padding: 18px 16px;
+    border-radius: 8px;
+    background:
+      radial-gradient(circle at 90% 0%, rgba(255, 122, 80, 0.34) 0%, transparent 38%),
+      linear-gradient(145deg, #29313c 0%, #151a21 100%);
+    color: #ffffff;
+    box-shadow: 0 16px 34px rgba(20, 26, 34, 0.12);
+  }
+
+  .side-cta-eyebrow {
+    display: block;
+    margin-bottom: 6px;
+    color: #ffad90;
+    font-size: 8px;
+    font-weight: 800;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+  }
+
+  .side-cta h2 {
+    max-width: 15ch;
+    margin: 0 0 6px;
+    color: #ffffff;
+    font-size: 17px;
+    font-weight: 700;
+    letter-spacing: -0.03em;
+    line-height: 1.16;
+  }
+
+  .side-cta p {
+    margin: 0 0 11px;
+    color: #aab4c2;
+    font-size: 9px;
+    line-height: 1.5;
+  }
+
+  .side-cta a {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    color: #ffb499;
+    font-size: 8.5px;
+    font-weight: 800;
+    letter-spacing: 0.04em;
+    text-decoration: none;
+    text-transform: uppercase;
+  }
+
+  .side-cta a:hover {
+    color: #ffffff;
+  }
+
+  .related-section {
+    margin-top: 18px;
+  }
+
+  .related-head {
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+    gap: 16px;
+    margin-bottom: 10px;
+    padding: 0 2px;
+  }
+
+  .eyebrow {
+    display: block;
+    margin-bottom: 5px;
+    color: var(--accent);
+    font-size: 8px;
+    font-weight: 800;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+  }
+
+  .related-head h2 {
+    margin: 0;
+    color: #1d2530;
+    font-size: 21px;
+    font-weight: 700;
+    letter-spacing: -0.04em;
+    line-height: 1;
+  }
+
+  .related-head > a {
+    color: #596575;
+    font-size: 8px;
+    font-weight: 800;
+    letter-spacing: 0.04em;
+    text-decoration: none;
+    text-transform: uppercase;
+  }
+
+  .related-head > a:hover {
+    color: var(--accent);
+  }
+
+  .related-grid {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 10px;
+  }
+
+  .catalog-notice {
+    margin: 16px 0 0;
+    color: #9aa4b1;
+    font-size: 8px;
+    text-align: center;
+  }
+
+  @media (max-width: 980px) {
+    .device-hero {
+      grid-template-columns: minmax(0, 1fr) 250px;
+      padding-left: 24px;
+      padding-right: 24px;
+    }
+
+    .hero-summary {
+      margin-left: -24px;
+      margin-right: -24px;
+    }
+
+    .device-layout {
+      grid-template-columns: minmax(0, 1fr) 272px;
+    }
+
+    .highlight-strip {
+      grid-template-columns: 1fr 1fr;
+    }
+  }
+
+  @media (max-width: 780px) {
+    .device-hero {
+      grid-template-columns: 1fr;
+      padding: 24px 20px 0;
+    }
+
+    .hero-copy {
+      max-width: 100%;
+      padding-bottom: 18px;
+    }
+
+    .hero-visual {
+      position: absolute;
+      top: 14px;
+      right: -16px;
+      width: 210px;
+      min-height: 0;
+      opacity: 0.32;
+      transform: scale(0.8);
+      transform-origin: top right;
+    }
+
+    .hero-summary {
+      grid-column: 1;
+      flex-wrap: wrap;
+      margin: 0 -20px;
+    }
+
+    .summary-price,
+    .summary-rating {
+      flex: 1;
+      min-width: 140px;
+    }
+
+    .summary-review {
+      flex-basis: 100%;
+      border-top: 1px solid rgba(255, 255, 255, 0.09);
+    }
+
+    .device-layout {
+      grid-template-columns: 1fr;
+    }
+
+    .device-side {
+      grid-template-columns: 1fr 1fr;
+      align-items: start;
+    }
+
+    .alternatives-panel,
+    .side-cta {
+      grid-column: 1 / -1;
+    }
+
+    .related-grid {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+  }
+
+  @media (max-width: 560px) {
+    .device-page {
+      padding: 12px 12px 0;
+    }
+
+    .device-hero {
+      padding: 21px 17px 0;
+    }
+
+    .hero-copy h1 {
+      max-width: 13ch;
+      font-size: 33px;
+    }
+
+    .hero-tagline {
+      max-width: 36ch;
+    }
+
+    .hero-visual {
+      display: none;
+    }
+
+    .hero-summary {
+      margin: 0 -17px;
+    }
+
+    .summary-price,
+    .summary-rating {
+      padding: 11px 15px;
+    }
+
+    .summary-review {
+      padding: 11px 15px;
+    }
+
+    .highlight-strip {
+      gap: 8px;
+      margin: 12px 0;
+    }
+
+    .highlight-card {
+      padding: 10px;
+    }
+
+    .highlight-card strong {
+      font-size: 9px;
+    }
+
+    .spec-groups {
+      grid-template-columns: 1fr;
+    }
+
+    .spec-group:nth-child(odd) {
+      border-right: 0;
+    }
+
+    .spec-group:nth-last-child(2):nth-child(odd) {
+      border-bottom: 1px solid #edf0f3;
+    }
+
+    .device-side {
+      grid-template-columns: 1fr;
+    }
+
+    .review-callout {
+      grid-template-columns: 50px minmax(0, 1fr);
+      gap: 11px;
+      padding: 14px;
+    }
+
+    .callout-score {
+      width: 48px;
+      height: 48px;
+      font-size: 16px;
+    }
+
+    .callout-arrow {
+      display: none;
+    }
+
+    .related-grid {
+      grid-template-columns: 1fr;
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .summary-review,
+    .alt-row {
+      transition: none;
+    }
+  }
+</style>

@@ -1,0 +1,297 @@
+---
+interface Props {
+  name: string;
+  slug?: string;
+  manufacturer?: string;
+  size?: 'xs' | 'sm' | 'md' | 'lg' | 'hero';
+  label?: string;
+  width?: number;
+}
+
+const { name, slug = name, manufacturer = '', size = 'md', label, width } = Astro.props;
+
+const brandTones: Record<string, { accent: string; deep: string; screen: string }> = {
+  samsung: { accent: '#6f9cff', deep: '#111b4d', screen: '#233c9b' },
+  apple: { accent: '#d7dde5', deep: '#3b3f45', screen: '#7b8798' },
+  google: { accent: '#7cb8ff', deep: '#123c64', screen: '#2e6fb3' },
+  oneplus: { accent: '#ff5964', deep: '#520b13', screen: '#b20d24' },
+  xiaomi: { accent: '#ffb066', deep: '#5c2700', screen: '#c45a05' },
+  vivo: { accent: '#8da2ff', deep: '#18224f', screen: '#3c50b7' },
+  honor: { accent: '#7cbaff', deep: '#0c315b', screen: '#2269b4' },
+  oppo: { accent: '#62dbc0', deep: '#083d32', screen: '#12846d' },
+  realme: { accent: '#ffe071', deep: '#4a3900', screen: '#b08b07' },
+  nothing: { accent: '#ff8b8b', deep: '#450e0e', screen: '#9e1b1b' },
+  huawei: { accent: '#ff9d9d', deep: '#4b0b0b', screen: '#a62020' },
+  nokia: { accent: '#8bb9ff', deep: '#11315c', screen: '#255f9f' },
+  sony: { accent: '#c3d0e0', deep: '#212832', screen: '#586b80' },
+  motorola: { accent: '#7fd3ff', deep: '#05354a', screen: '#0d789e' }
+};
+
+const tone = brandTones[manufacturer] ?? { accent: '#ffb16d', deep: '#4a2207', screen: '#b84c0d' };
+const glowSeed = [...slug].reduce((total, character) => total + character.charCodeAt(0), 0);
+const rotation = (glowSeed % 7) - 3;
+---
+
+<div
+  class:list={['device-art', `device-art--${size}`]}
+  style={`--device-accent:${tone.accent};--device-deep:${tone.deep};--device-screen:${tone.screen};--device-rotate:${rotation}deg${width ? `;--art-width:${width}px` : ''}`}
+  role="img"
+  aria-label={label ?? name}
+>
+  <span class="art-glow" aria-hidden="true"></span>
+  <div class="device-frame" aria-hidden="true">
+    <span class="device-shine"></span>
+    <span class="device-button device-button--power"></span>
+    <span class="device-button device-button--volume"></span>
+    <div class="device-screen">
+      <span class="screen-orb screen-orb--one"></span>
+      <span class="screen-orb screen-orb--two"></span>
+      <span class="screen-lines"></span>
+      <span class="screen-island"></span>
+      <span class="screen-time">9:41</span>
+      <span class="screen-brand">{manufacturer ? manufacturer.slice(0, 1).toUpperCase() : 'T'}</span>
+    </div>
+    <div class="device-camera">
+      <span></span><span></span><span></span>
+    </div>
+  </div>
+  <span class="device-floor" aria-hidden="true"></span>
+</div>
+
+<style>
+  .device-art {
+    --art-width: 104px;
+    position: relative;
+    display: grid;
+    justify-items: center;
+    align-items: end;
+    width: var(--art-width);
+    max-width: 100%;
+    isolation: isolate;
+  }
+
+  .device-art--xs {
+    --art-width: 34px;
+  }
+
+  .device-art--sm {
+    --art-width: 56px;
+  }
+
+  .device-art--md {
+    --art-width: 96px;
+  }
+
+  .device-art--lg {
+    --art-width: 148px;
+  }
+
+  .device-art--hero {
+    --art-width: 218px;
+  }
+
+  .art-glow {
+    position: absolute;
+    z-index: -1;
+    width: 120%;
+    height: 76%;
+    bottom: 6%;
+    border-radius: 50%;
+    background: radial-gradient(circle, color-mix(in srgb, var(--device-accent) 55%, transparent) 0%, transparent 68%);
+    filter: blur(18px);
+    opacity: 0.65;
+  }
+
+  .device-frame {
+    position: relative;
+    width: 100%;
+    aspect-ratio: 0.485;
+    padding: 3.2%;
+    border-radius: 18% / 8.8%;
+    background:
+      linear-gradient(145deg, rgba(255, 255, 255, 0.72), transparent 20%),
+      linear-gradient(160deg, color-mix(in srgb, var(--device-deep) 68%, #ffffff) 0%, var(--device-deep) 30%, #090b10 78%, #20242c 100%);
+    box-shadow:
+      0 2px 2px rgba(255, 255, 255, 0.35) inset,
+      0 -2px 4px rgba(0, 0, 0, 0.6) inset,
+      0 12px 26px rgba(10, 14, 24, 0.32),
+      0 2px 5px rgba(10, 14, 24, 0.18);
+    transform: rotate(var(--device-rotate));
+    transition: transform 280ms ease, box-shadow 280ms ease;
+  }
+
+  a:hover .device-frame,
+  .device-art:hover .device-frame {
+    transform: rotate(0deg) translateY(-3px) scale(1.015);
+    box-shadow:
+      0 2px 2px rgba(255, 255, 255, 0.38) inset,
+      0 -2px 4px rgba(0, 0, 0, 0.6) inset,
+      0 20px 34px rgba(10, 14, 24, 0.36),
+      0 4px 8px rgba(10, 14, 24, 0.18);
+  }
+
+  .device-shine {
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    border: 1px solid rgba(255, 255, 255, 0.42);
+    box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.34);
+    pointer-events: none;
+  }
+
+  .device-screen {
+    position: absolute;
+    inset: 3.4%;
+    overflow: hidden;
+    border-radius: 15% / 7.2%;
+    background:
+      radial-gradient(circle at 78% 12%, color-mix(in srgb, var(--device-accent) 92%, #ffffff) 0%, transparent 31%),
+      radial-gradient(circle at 15% 82%, color-mix(in srgb, var(--device-screen) 90%, #000000) 0%, transparent 45%),
+      linear-gradient(150deg, var(--device-screen) 0%, #08101c 55%, #101723 100%);
+    box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.8), 0 0 18px color-mix(in srgb, var(--device-accent) 24%, transparent) inset;
+  }
+
+  .screen-orb {
+    position: absolute;
+    border-radius: 50%;
+    filter: blur(5px);
+  }
+
+  .screen-orb--one {
+    width: 58%;
+    height: 26%;
+    left: -12%;
+    top: 14%;
+    background: color-mix(in srgb, var(--device-accent) 80%, transparent);
+    opacity: 0.5;
+  }
+
+  .screen-orb--two {
+    width: 44%;
+    height: 20%;
+    right: -10%;
+    bottom: 20%;
+    background: color-mix(in srgb, var(--device-screen) 68%, #ffffff);
+    opacity: 0.4;
+  }
+
+  .screen-lines {
+    position: absolute;
+    inset: 0;
+    background-image:
+      linear-gradient(rgba(255, 255, 255, 0.1) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(255, 255, 255, 0.08) 1px, transparent 1px);
+    background-size: 22% 14%;
+    opacity: 0.35;
+    mask-image: linear-gradient(180deg, transparent 20%, #000 70%, transparent 100%);
+  }
+
+  .screen-island {
+    position: absolute;
+    top: 3.2%;
+    left: 50%;
+    width: 28%;
+    height: 3.5%;
+    border-radius: 999px;
+    background: #05070b;
+    box-shadow: 0 1px 1px rgba(255, 255, 255, 0.14);
+    transform: translateX(-50%);
+  }
+
+  .screen-time {
+    position: absolute;
+    top: 10%;
+    left: 0;
+    right: 0;
+    color: rgba(255, 255, 255, 0.9);
+    font-size: clamp(4px, 0.7em, 17px);
+    font-weight: 700;
+    letter-spacing: 0.03em;
+    text-align: center;
+    text-shadow: 0 1px 4px rgba(0, 0, 0, 0.4);
+  }
+
+  .screen-brand {
+    position: absolute;
+    left: 50%;
+    top: 53%;
+    display: grid;
+    width: 30%;
+    aspect-ratio: 1;
+    place-items: center;
+    border: 1px solid rgba(255, 255, 255, 0.28);
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.08);
+    color: rgba(255, 255, 255, 0.8);
+    font-size: clamp(6px, 1.1em, 20px);
+    font-weight: 800;
+    transform: translate(-50%, -50%);
+    backdrop-filter: blur(3px);
+  }
+
+  .device-camera {
+    position: absolute;
+    z-index: 2;
+    top: 4.8%;
+    left: 6.2%;
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 12%;
+    width: 22%;
+    padding: 7%;
+    border-radius: 24%;
+    background: color-mix(in srgb, var(--device-deep) 45%, #0d1118);
+    box-shadow: 0 1px 1px rgba(255, 255, 255, 0.22), 0 3px 6px rgba(0, 0, 0, 0.28);
+    transform: rotate(var(--device-rotate));
+  }
+
+  .device-camera span {
+    aspect-ratio: 1;
+    border-radius: 50%;
+    background:
+      radial-gradient(circle at 34% 30%, rgba(255, 255, 255, 0.8) 0 8%, transparent 10%),
+      radial-gradient(circle at 50% 50%, #26303b 0 36%, #04070b 40% 100%);
+    box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.55);
+  }
+
+  .device-camera span:first-child {
+    grid-column: span 2;
+    justify-self: start;
+    width: 48%;
+  }
+
+  .device-button {
+    position: absolute;
+    width: 1.5%;
+    border-radius: 2px;
+    background: linear-gradient(180deg, #59606a, #20252e);
+  }
+
+  .device-button--power {
+    top: 26%;
+    right: -1.6%;
+    height: 13%;
+  }
+
+  .device-button--volume {
+    top: 20%;
+    left: -1.4%;
+    height: 9%;
+    box-shadow: 0 16px 0 #3c434d;
+  }
+
+  .device-floor {
+    width: 68%;
+    height: 7%;
+    margin-top: -2%;
+    border-radius: 50%;
+    background: radial-gradient(ellipse, rgba(12, 16, 25, 0.32) 0%, transparent 72%);
+    filter: blur(2px);
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .device-frame {
+      transition: none;
+    }
+  }
+</style>

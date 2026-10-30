@@ -1,5 +1,6 @@
 ---
 import BaseLayout from '../layouts/BaseLayout.astro';
+import DeviceArt from '../components/DeviceArt.astro';
 import { phones } from '../data/catalog';
 
 const params = new URLSearchParams(Astro.request.url.split('?')[1] ?? '');
@@ -8,206 +9,1366 @@ const selectedPhones = requestedSlugs
   .slice(0, 4)
   .map((slug) => phones.find((phone) => phone.slug === slug))
   .filter((phone) => phone !== undefined);
-const compareProperties = [
-  ['Display', 'display'],
-  ['Processor', 'processor'],
-  ['RAM', 'ram'],
-  ['Storage', 'storage'],
-  ['Battery', 'battery'],
-  ['Charging', 'charging'],
-  ['Camera', 'camera']
+
+type Phone = typeof phones[number];
+type CompareRow = [string, (phone: Phone) => string];
+
+const compareGroups: Array<{ title: string; rows: CompareRow[] }> = [
+  {
+    title: 'Overview',
+    rows: [
+      ['Brand', (phone: Phone) => phone.manufacturer],
+      ['Launch price', (phone: Phone) => phone.price],
+      ['Editor rating', (phone: Phone) => `${phone.rating} / 5`],
+      ['Release status', (phone: Phone) => phone.status],
+      ['Released', (phone: Phone) => phone.releaseDate],
+      ['Operating system', (phone: Phone) => phone.os]
+    ]
+  },
+  {
+    title: 'Display',
+    rows: [
+      ['Display', (phone: Phone) => phone.display],
+      ['Panel details', (phone: Phone) => phone.specs.display]
+    ]
+  },
+  {
+    title: 'Performance',
+    rows: [
+      ['Chipset', (phone: Phone) => phone.chipset],
+      ['Processor', (phone: Phone) => phone.specs.processor],
+      ['RAM', (phone: Phone) => phone.specs.ram],
+      ['Storage', (phone: Phone) => phone.specs.storage]
+    ]
+  },
+  {
+    title: 'Battery',
+    rows: [
+      ['Capacity', (phone: Phone) => phone.battery],
+      ['Charging', (phone: Phone) => phone.specs.charging]
+    ]
+  },
+  {
+    title: 'Camera',
+    rows: [
+      ['Camera system', (phone: Phone) => phone.camera],
+      ['Camera details', (phone: Phone) => phone.specs.camera]
+    ]
+  }
 ];
+
+const rowValues = (row: CompareRow) =>
+  selectedPhones.map((phone) => row[1](phone));
 ---
 
-<BaseLayout title="Compare phones | TechAtlas" description="Compare phones side by side with key technical differences.">
-  <div class="page-shell compare-page" data-phone-catalog={JSON.stringify(phones)}>
-    <div class="breadcrumbs">Home / Compare</div>
-    <div class="page-head">
-      <h1>Phone comparison</h1>
-      <a href="/phones" class="ghost-button">Browse devices</a>
-    </div>
+<BaseLayout title="Compare phones | TechAtlas" description="Compare up to four phones side by side with clear, highlighted specification differences.">
+  <div class="compare-page" data-phone-catalog={JSON.stringify(phones)}>
+    <nav class="crumbs" aria-label="Breadcrumb">
+      <a href="/">Home</a><span aria-hidden="true">/</span><span>Compare</span>
+    </nav>
 
-    <section class="panel compare-picker">
+    <header class="compare-head">
       <div>
-        <h2>Select 2–4 phones</h2>
-        <p class="muted">Choose devices to update the comparison. Your selection is shareable by URL.</p>
+        <span class="eyebrow">Side-by-side</span>
+        <h1>Put them <em>next to each other.</em></h1>
+        <p>Choose two to four phones and let the differences do the talking. Every row that differs is marked so you can scan the trade-offs quickly.</p>
       </div>
-      <div class="compare-picker-controls">
-        <label class="field" for="phone-search">
-          <span>Find a phone</span>
-          <input id="phone-search" type="search" placeholder="Search by model name" />
-        </label>
-        <label class="field" for="phone-picker">
-          <span>Phones</span>
-          <select id="phone-picker" multiple size="7">
-            {phones.map((phone) => (
-              <option value={phone.slug} selected={selectedPhones.some((selected) => selected.slug === phone.slug)}>
-                {phone.name}
-              </option>
-            ))}
-          </select>
-        </label>
-        <div class="stack">
-          <button id="compare-submit" class="primary-button" type="button">Compare selection</button>
-          <button id="copy-compare-link" class="ghost-button" type="button">Copy share link</button>
+      <div class="head-note">
+        <span class="head-note-icon" aria-hidden="true">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round"><path d="M8 4 4 8l4 4"></path><path d="M4 8h16"></path><path d="m16 20 4-4-4-4"></path><path d="M20 16H4"></path></svg>
+        </span>
+        <strong>Up to 4 phones</strong>
+        <span>Selections are shareable by URL</span>
+      </div>
+    </header>
+
+    <section class="picker-panel" aria-labelledby="picker-title">
+      <header class="picker-head">
+        <div>
+          <h2 id="picker-title">Build your comparison</h2>
+          <p>Search the catalog, then select between two and four devices.</p>
         </div>
-        <p id="compare-message" class="compare-message" role="status" aria-live="polite"></p>
+        <span class="selection-count"><strong id="selected-count">{selectedPhones.length}</strong> / 4 selected</span>
+      </header>
+
+      <div class="picker-tools">
+        <div class="picker-search">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" aria-hidden="true">
+            <circle cx="11" cy="11" r="7.5"></circle><path d="m20.5 20.5-4.2-4.2"></path>
+          </svg>
+          <label class="sr-only" for="phone-search">Find a phone to compare</label>
+          <input id="phone-search" type="search" placeholder="Find a phone by name or brand…" autocomplete="off" />
+        </div>
+        <div class="picker-actions">
+          <button id="compare-submit" class="compare-button" type="button">
+            Compare selection
+            <span aria-hidden="true">→</span>
+          </button>
+          <button id="copy-compare-link" class="copy-button" type="button">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><rect x="8" y="8" width="12" height="12" rx="2"></rect><path d="M16 8V5a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h3"></path></svg>
+            Copy link
+          </button>
+        </div>
       </div>
+
+      <div class="phone-picker" id="phone-picker">
+        {phones.map((phone) => {
+          const isSelected = selectedPhones.some((selected) => selected.slug === phone.slug);
+          return (
+            <button
+              class:list={['picker-item', { 'is-selected': isSelected }]}
+              type="button"
+              data-phone-option={phone.slug}
+              data-picker-name={`${phone.name} ${phone.manufacturer}`.toLowerCase()}
+              aria-pressed={isSelected ? 'true' : 'false'}
+            >
+              <span class="picker-art">
+                <DeviceArt name={phone.name} slug={phone.slug} manufacturer={phone.manufacturer} size="xs" width={16} />
+              </span>
+              <span class="picker-copy">
+                <strong>{phone.name}</strong>
+                <small>{phone.price} · {phone.chipset}</small>
+              </span>
+              <span class="picker-check" aria-hidden="true">✓</span>
+            </button>
+          );
+        })}
+      </div>
+
+      <p id="compare-message" class="compare-message" role="status" aria-live="polite">Differences are highlighted; they do not imply an overall winner.</p>
     </section>
 
     <div id="comparison-results" aria-live="polite">
-      <div class="compare-summary">
-        {selectedPhones.map((phone) => (
-          <article class="panel compare-phone">
-            <span class="pill">{phone.manufacturer}</span>
-            <h3>{phone.name}</h3>
-            <p class="muted">{phone.price}</p>
-          </article>
-        ))}
-      </div>
-      <div class="compare-table-wrap">
-        <table class="compare-table">
-          <thead>
-            <tr>
-              <th>Specification</th>
-              {selectedPhones.map((phone) => <th>{phone.name}</th>)}
-            </tr>
-          </thead>
-          <tbody>
-            {compareProperties.map(([label, key]) => (
-              <tr>
-                <th scope="row">{label}</th>
-                {selectedPhones.map((phone) => <td>{phone.specs[key as keyof typeof phone.specs] || 'Not confirmed'}</td>)}
-              </tr>
+      {selectedPhones.length >= 2 ? (
+        <>
+          <div class="compare-summary" style={`--columns:${selectedPhones.length}`}>
+            {selectedPhones.map((phone) => (
+              <article class="compare-phone">
+                <span class="compare-phone-brand">{phone.manufacturer}</span>
+                <span class="compare-phone-monogram" aria-hidden="true">{phone.name.slice(0, 1)}</span>
+                <h3>{phone.name}</h3>
+                <span class="compare-phone-price">{phone.price}</span>
+                <span class="compare-phone-meta">{phone.display} · ★ {phone.rating}</span>
+                <a href={`/phones/${phone.slug}`}>View phone <span aria-hidden="true">→</span></a>
+              </article>
             ))}
-          </tbody>
-        </table>
-      </div>
+          </div>
+
+          <div class="compare-table-panel">
+            <header class="panel-head">
+              <h2>Specification comparison</h2>
+              <span class="difference-legend"><i aria-hidden="true"></i> Highlighted rows differ</span>
+            </header>
+            <div class="compare-table-wrap">
+              <table class="compare-table">
+                <thead>
+                  <tr>
+                    <th scope="col">Specification</th>
+                    {selectedPhones.map((phone) => <th scope="col">{phone.name}</th>)}
+                  </tr>
+                </thead>
+                <tbody>
+                  {compareGroups.map((group) => (
+                    <>
+                      <tr class="group-row">
+                        <th colspan={selectedPhones.length + 1} scope="colgroup">{group.title}</th>
+                      </tr>
+                      {group.rows.map((row) => {
+                        const values = rowValues(row);
+                        const differs = new Set(values).size > 1;
+                        return (
+                          <tr>
+                            <th scope="row">{row[0]}</th>
+                            {values.map((value) => <td class:list={{ difference: differs }}>{value}</td>)}
+                          </tr>
+                        );
+                      })}
+                    </>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </>
+      ) : (
+        <div class="compare-placeholder">
+          <span class="placeholder-glyph" aria-hidden="true">VS</span>
+          <h2>Select at least two phones</h2>
+          <p>Use the picker above to choose two to four devices and build a shareable comparison.</p>
+        </div>
+      )}
     </div>
+
+    <section class="popular-section" aria-labelledby="popular-title">
+      <header class="popular-head">
+        <div>
+          <span class="eyebrow">Start from a shortcut</span>
+          <h2 id="popular-title">Popular matchups</h2>
+        </div>
+        <a href="/phones">Browse all phones <span aria-hidden="true">→</span></a>
+      </header>
+      <div class="popular-grid">
+        <a href="/compare?phones=samsung-galaxy-s25-ultra,iphone-16-pro-max"><strong>Galaxy S25 Ultra</strong><span>vs</span><strong>iPhone 16 Pro Max</strong><small>Flagship face-off</small></a>
+        <a href="/compare?phones=xiaomi-15-ultra,vivo-x200-pro"><strong>Xiaomi 15 Ultra</strong><span>vs</span><strong>Vivo X200 Pro</strong><small>Camera heavyweights</small></a>
+        <a href="/compare?phones=oneplus-13,samsung-galaxy-s25"><strong>OnePlus 13</strong><span>vs</span><strong>Galaxy S25</strong><small>Value flagship clash</small></a>
+        <a href="/compare?phones=google-pixel-9-pro,iphone-16-pro-max"><strong>Pixel 9 Pro</strong><span>vs</span><strong>iPhone 16 Pro Max</strong><small>Software and camera</small></a>
+      </div>
+    </section>
+
+    <p class="catalog-notice">Sample catalog data. Specs and prices are illustrative, not live retail offers.</p>
   </div>
 
   <script>
     import type { Phone } from '../data/catalog';
 
-    const root = document.querySelector('.compare-page');
-    const picker = document.querySelector<HTMLSelectElement>('#phone-picker');
+    const root = document.querySelector<HTMLElement>('.compare-page');
     const search = document.querySelector<HTMLInputElement>('#phone-search');
     const message = document.querySelector<HTMLElement>('#compare-message');
     const results = document.querySelector<HTMLElement>('#comparison-results');
-    if (!root || !picker || !search || !message || !results) {
+    const submit = document.querySelector<HTMLButtonElement>('#compare-submit');
+    const copyButton = document.querySelector<HTMLButtonElement>('#copy-compare-link');
+    const selectedCount = document.querySelector<HTMLElement>('#selected-count');
+    const options = [...document.querySelectorAll<HTMLButtonElement>('[data-phone-option]')];
+
+    if (!root || !search || !message || !results || !submit || !copyButton || !selectedCount) {
       throw new Error('Phone comparison controls were not rendered.');
     }
 
-    const catalog = JSON.parse(root.getAttribute('data-phone-catalog') || '[]') as Phone[];
-    const categories: [string, keyof Phone['specs']][] = [
-      ['Display', 'display'],
-      ['Processor', 'processor'],
-      ['RAM', 'ram'],
-      ['Storage', 'storage'],
-      ['Battery', 'battery'],
-      ['Charging', 'charging'],
-      ['Camera', 'camera']
+    const catalog = JSON.parse(root.dataset.phoneCatalog || '[]') as Phone[];
+    const selected = new Set(options.filter((option) => option.classList.contains('is-selected')).map((option) => option.dataset.phoneOption ?? ''));
+    const defaultSelection = [...selected];
+
+    const groups: { title: string; rows: [string, (phone: Phone) => string][] }[] = [
+      {
+        title: 'Overview',
+        rows: [
+          ['Brand', (phone) => phone.manufacturer],
+          ['Launch price', (phone) => phone.price],
+          ['Editor rating', (phone) => `${phone.rating} / 5`],
+          ['Release status', (phone) => phone.status],
+          ['Released', (phone) => phone.releaseDate],
+          ['Operating system', (phone) => phone.os]
+        ]
+      },
+      {
+        title: 'Display',
+        rows: [
+          ['Display', (phone) => phone.display],
+          ['Panel details', (phone) => phone.specs.display]
+        ]
+      },
+      {
+        title: 'Performance',
+        rows: [
+          ['Chipset', (phone) => phone.chipset],
+          ['Processor', (phone) => phone.specs.processor],
+          ['RAM', (phone) => phone.specs.ram],
+          ['Storage', (phone) => phone.specs.storage]
+        ]
+      },
+      {
+        title: 'Battery',
+        rows: [
+          ['Capacity', (phone) => phone.battery],
+          ['Charging', (phone) => phone.specs.charging]
+        ]
+      },
+      {
+        title: 'Camera',
+        rows: [
+          ['Camera system', (phone) => phone.camera],
+          ['Camera details', (phone) => phone.specs.camera]
+        ]
+      }
     ];
 
-    function renderComparison(slugs: string[]) {
-      const chosen = slugs
+    function chosenPhones() {
+      return [...selected]
         .map((slug) => catalog.find((phone) => phone.slug === slug))
         .filter((phone): phone is Phone => phone !== undefined);
-      if (chosen.length < 2 || chosen.length > 4) {
-        message.textContent = 'Select between two and four phones.';
-        return false;
+    }
+
+    function updateSelectionUi() {
+      options.forEach((option) => {
+        const isSelected = selected.has(option.dataset.phoneOption ?? '');
+        option.classList.toggle('is-selected', isSelected);
+        option.setAttribute('aria-pressed', String(isSelected));
+      });
+      selectedCount.textContent = String(selected.size);
+      submit.disabled = selected.size < 2;
+    }
+
+    function renderPlaceholder() {
+      const placeholder = document.createElement('div');
+      placeholder.className = 'compare-placeholder';
+      const glyph = document.createElement('span');
+      glyph.className = 'placeholder-glyph';
+      glyph.setAttribute('aria-hidden', 'true');
+      glyph.textContent = 'VS';
+      const title = document.createElement('h2');
+      title.textContent = 'Select at least two phones';
+      const copy = document.createElement('p');
+      copy.textContent = 'Use the picker above to choose two to four devices and build a shareable comparison.';
+      placeholder.append(glyph, title, copy);
+      results.replaceChildren(placeholder);
+    }
+
+    function renderComparison() {
+      const chosen = chosenPhones();
+      if (chosen.length < 2) {
+        renderPlaceholder();
+        message.textContent = 'Select at least two phones to compare.';
+        return;
       }
 
       const summary = document.createElement('div');
       summary.className = 'compare-summary';
+      summary.style.setProperty('--columns', String(chosen.length));
+
       chosen.forEach((phone) => {
         const card = document.createElement('article');
-        card.className = 'panel compare-phone';
+        card.className = 'compare-phone';
         const brand = document.createElement('span');
-        brand.className = 'pill';
+        brand.className = 'compare-phone-brand';
         brand.textContent = phone.manufacturer;
+        const art = document.createElement('span');
+        art.className = 'compare-phone-monogram';
+        art.setAttribute('aria-hidden', 'true');
+        art.textContent = phone.name.slice(0, 1);
         const name = document.createElement('h3');
         name.textContent = phone.name;
-        const price = document.createElement('p');
-        price.className = 'muted';
+        const price = document.createElement('span');
+        price.className = 'compare-phone-price';
         price.textContent = phone.price;
-        card.append(brand, name, price);
+        const meta = document.createElement('span');
+        meta.className = 'compare-phone-meta';
+        meta.textContent = `${phone.display} · ★ ${phone.rating}`;
+        const link = document.createElement('a');
+        link.href = `/phones/${phone.slug}`;
+        link.textContent = 'View phone →';
+        card.append(brand, art, name, price, meta, link);
         summary.append(card);
       });
 
+      const panel = document.createElement('div');
+      panel.className = 'compare-table-panel';
+      const head = document.createElement('header');
+      head.className = 'panel-head';
+      const heading = document.createElement('h2');
+      heading.textContent = 'Specification comparison';
+      const legend = document.createElement('span');
+      legend.className = 'difference-legend';
+      legend.innerHTML = '<i aria-hidden="true"></i> Highlighted rows differ';
+      head.append(heading, legend);
+
+      const wrap = document.createElement('div');
+      wrap.className = 'compare-table-wrap';
       const table = document.createElement('table');
       table.className = 'compare-table';
-      const head = document.createElement('thead');
-      const heading = document.createElement('tr');
-      const firstHeading = document.createElement('th');
-      firstHeading.textContent = 'Specification';
-      heading.append(firstHeading);
+
+      const thead = document.createElement('thead');
+      const headingRow = document.createElement('tr');
+      const corner = document.createElement('th');
+      corner.scope = 'col';
+      corner.textContent = 'Specification';
+      headingRow.append(corner);
       chosen.forEach((phone) => {
         const cell = document.createElement('th');
+        cell.scope = 'col';
         cell.textContent = phone.name;
-        heading.append(cell);
+        headingRow.append(cell);
       });
-      head.append(heading);
-      const body = document.createElement('tbody');
-      categories.forEach(([label, key]) => {
-        const row = document.createElement('tr');
-        const labelCell = document.createElement('th');
-        labelCell.scope = 'row';
-        labelCell.textContent = label;
-        row.append(labelCell);
-        const values = chosen.map((phone) => phone.specs[key] || 'Not confirmed');
-        const differs = new Set(values).size > 1;
-        values.forEach((value) => {
-          const cell = document.createElement('td');
-          cell.textContent = value;
-          if (differs) cell.className = 'difference';
-          row.append(cell);
+      thead.append(headingRow);
+
+      const tbody = document.createElement('tbody');
+      groups.forEach((group) => {
+        const groupRow = document.createElement('tr');
+        groupRow.className = 'group-row';
+        const groupCell = document.createElement('th');
+        groupCell.scope = 'colgroup';
+        groupCell.colSpan = chosen.length + 1;
+        groupCell.textContent = group.title;
+        groupRow.append(groupCell);
+        tbody.append(groupRow);
+
+        group.rows.forEach(([label, read]) => {
+          const values = chosen.map((phone) => read(phone));
+          const differs = new Set(values).size > 1;
+          const row = document.createElement('tr');
+          const rowHeading = document.createElement('th');
+          rowHeading.scope = 'row';
+          rowHeading.textContent = label;
+          row.append(rowHeading);
+          values.forEach((value) => {
+            const cell = document.createElement('td');
+            cell.textContent = value;
+            if (differs) cell.className = 'difference';
+            row.append(cell);
+          });
+          tbody.append(row);
         });
-        body.append(row);
       });
-      table.append(head, body);
-      const tableWrap = document.createElement('div');
-      tableWrap.className = 'compare-table-wrap';
-      tableWrap.append(table);
-      results.replaceChildren(summary, tableWrap);
-      message.textContent = 'Differences are highlighted; they do not imply an overall winner.';
-      return true;
+
+      table.append(thead, tbody);
+      wrap.append(table);
+      panel.append(head, wrap);
+      results.replaceChildren(summary, panel);
+
+      message.textContent = chosen.length === 4
+        ? 'Four phones selected. Differences are highlighted; they do not imply an overall winner.'
+        : `${chosen.length} phones selected. Differences are highlighted; they do not imply an overall winner.`;
     }
 
-    function selectedSlugs() {
-      return [...picker.selectedOptions].map((option) => option.value);
-    }
-
-    const urlSlugs = new URLSearchParams(window.location.search).get('phones');
-    if (urlSlugs) {
-      const selected = new Set(urlSlugs.split(',').filter(Boolean).slice(0, 4));
-      [...picker.options].forEach((option) => { option.selected = selected.has(option.value); });
-      renderComparison([...selected]);
-    }
-
-    document.querySelector('#compare-submit').addEventListener('click', () => {
-      const slugs = selectedSlugs();
-      if (renderComparison(slugs)) {
-        const url = new URL(window.location.href);
-        url.searchParams.set('phones', slugs.join(','));
-        history.replaceState({}, '', url);
+    function writeUrl() {
+      const url = new URL(window.location.href);
+      if (selected.size >= 2) {
+        url.searchParams.set('phones', [...selected].join(','));
+      } else {
+        url.searchParams.delete('phones');
       }
+      history.replaceState({}, '', url);
+      return url;
+    }
+
+    options.forEach((option) => {
+      option.addEventListener('click', () => {
+        const slug = option.dataset.phoneOption ?? '';
+        if (selected.has(slug)) {
+          if (selected.size <= 2) {
+            message.textContent = 'Keep at least two phones selected to compare.';
+            return;
+          }
+          selected.delete(slug);
+        } else {
+          if (selected.size >= 4) {
+            message.textContent = 'You can compare up to four phones at once. Deselect one first.';
+            return;
+          }
+          selected.add(slug);
+        }
+        updateSelectionUi();
+        writeUrl();
+        renderComparison();
+      });
+    });
+
+    submit.addEventListener('click', () => {
+      writeUrl();
+      renderComparison();
     });
 
     search.addEventListener('input', () => {
-      const query = search.value.trim().toLowerCase();
-      [...picker.options].forEach((option) => {
-        option.hidden = query.length > 0 && !option.textContent.toLowerCase().includes(query);
+      const term = search.value.trim().toLowerCase();
+      options.forEach((option) => {
+        option.hidden = Boolean(term) && !(option.dataset.pickerName ?? '').includes(term);
       });
     });
 
-    document.querySelector('#copy-compare-link').addEventListener('click', async () => {
+    copyButton.addEventListener('click', async () => {
+      const url = writeUrl();
       try {
-        await navigator.clipboard.writeText(window.location.href);
+        await navigator.clipboard.writeText(url.toString());
         message.textContent = 'Comparison link copied.';
       } catch {
         message.textContent = 'Copy is unavailable in this browser. Copy the address bar URL instead.';
       }
     });
+
+    updateSelectionUi();
+
+    const requestedSlugs = [...new Set(
+      (new URLSearchParams(window.location.search).get('phones') ?? '')
+        .split(',')
+        .map((slug) => slug.trim())
+        .filter((slug) => slug && catalog.some((phone) => phone.slug === slug))
+    )].slice(0, 4);
+
+    if (requestedSlugs.length >= 2) {
+      selected.clear();
+      requestedSlugs.forEach((slug) => selected.add(slug));
+    } else if (requestedSlugs.length === 1) {
+      const primary = requestedSlugs[0];
+      const partner = defaultSelection.find((slug) => slug !== primary)
+        ?? catalog.find((phone) => phone.slug !== primary)?.slug;
+      selected.clear();
+      selected.add(primary);
+      if (partner) selected.add(partner);
+    }
+
+    if (requestedSlugs.length) {
+      updateSelectionUi();
+      writeUrl();
+      renderComparison();
+    }
   </script>
+
+  <style>
+    :global(body) {
+      background: #eef1f4;
+      font-family: 'Segoe UI', system-ui, -apple-system, BlinkMacSystemFont, Arial, sans-serif;
+    }
+
+    .compare-page {
+      --ink: #1b212a;
+      --line: #dbe0e7;
+      --accent: #e9542d;
+      width: 100%;
+      max-width: 1240px;
+      margin: 0 auto;
+      padding: 16px 18px 0;
+      color: var(--ink);
+    }
+
+    .crumbs {
+      display: flex;
+      align-items: center;
+      gap: 7px;
+      margin-bottom: 12px;
+      color: #8a94a2;
+      font-size: 9px;
+      font-weight: 600;
+    }
+
+    .crumbs a {
+      color: #586575;
+      text-decoration: none;
+    }
+
+    .crumbs a:hover {
+      color: var(--accent);
+    }
+
+    .compare-head {
+      display: flex;
+      align-items: flex-end;
+      justify-content: space-between;
+      gap: 24px;
+      padding: 5px 2px 20px;
+    }
+
+    .eyebrow {
+      display: block;
+      margin-bottom: 7px;
+      color: var(--accent);
+      font-size: 8px;
+      font-weight: 800;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+    }
+
+    .compare-head h1 {
+      max-width: 20ch;
+      margin: 0 0 6px;
+      color: #161d26;
+      font-size: clamp(31px, 4.2vw, 46px);
+      font-weight: 700;
+      letter-spacing: -0.055em;
+      line-height: 0.99;
+    }
+
+    .compare-head h1 em {
+      color: #d9441f;
+      font-style: normal;
+    }
+
+    .compare-head p {
+      max-width: 62ch;
+      margin: 0;
+      color: #6e7887;
+      font-size: 11px;
+      line-height: 1.55;
+    }
+
+    .head-note {
+      display: grid;
+      justify-items: end;
+      gap: 1px;
+      flex-shrink: 0;
+      padding-bottom: 2px;
+    }
+
+    .head-note-icon {
+      display: grid;
+      width: 32px;
+      height: 32px;
+      margin-bottom: 5px;
+      place-items: center;
+      border-radius: 50%;
+      background: #fff1eb;
+      color: #d9441f;
+    }
+
+    .head-note strong {
+      color: #3a4553;
+      font-size: 10px;
+      font-weight: 700;
+    }
+
+    .head-note > span:last-child {
+      color: #98a2ae;
+      font-size: 8px;
+    }
+
+    .picker-panel {
+      overflow: hidden;
+      margin-bottom: 14px;
+      border: 1px solid var(--line);
+      border-radius: 9px;
+      background: #ffffff;
+      box-shadow: 0 1px 2px rgba(23, 32, 44, 0.035), 0 10px 24px rgba(23, 32, 44, 0.025);
+    }
+
+    .picker-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      padding: 14px 15px 13px;
+      border-bottom: 1px solid #edf0f3;
+    }
+
+    .picker-head h2 {
+      margin: 0 0 3px;
+      color: #232b35;
+      font-size: 15px;
+      font-weight: 700;
+      letter-spacing: -0.025em;
+    }
+
+    .picker-head p {
+      margin: 0;
+      color: #8a94a2;
+      font-size: 9px;
+    }
+
+    .selection-count {
+      flex-shrink: 0;
+      color: #98a2ae;
+      font-size: 8px;
+      font-weight: 700;
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+    }
+
+    .selection-count strong {
+      color: #d9441f;
+      font-size: 14px;
+      font-weight: 800;
+    }
+
+    .picker-tools {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 11px 14px;
+      border-bottom: 1px solid #edf0f3;
+      background: #fafbfc;
+    }
+
+    .picker-search {
+      display: flex;
+      align-items: center;
+      gap: 7px;
+      flex: 1;
+      max-width: 420px;
+      height: 34px;
+      padding: 0 9px;
+      border: 1px solid #cbd2dc;
+      border-radius: 4px;
+      background: #ffffff;
+      color: #98a2ae;
+      transition: border-color 140ms, box-shadow 140ms;
+    }
+
+    .picker-search:focus-within {
+      border-color: #909aa8;
+      box-shadow: 0 0 0 3px rgba(233, 84, 45, 0.1);
+    }
+
+    .picker-search input {
+      flex: 1;
+      min-width: 0;
+      height: 100%;
+      padding: 0;
+      border: 0;
+      outline: 0;
+      background: transparent;
+      color: #2d3540;
+      font-size: 10.5px;
+      font-weight: 600;
+    }
+
+    .picker-search input::placeholder {
+      color: #a2abb7;
+      font-weight: 500;
+    }
+
+    .picker-actions {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      margin-left: auto;
+    }
+
+    .compare-button {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      min-height: 34px;
+      padding: 0 11px;
+      border: 1px solid #c43d1c;
+      border-radius: 4px;
+      background: linear-gradient(180deg, #f7623a, #d9441f);
+      color: #ffffff;
+      font-size: 8.5px;
+      font-weight: 800;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+      cursor: pointer;
+      box-shadow: 0 3px 9px rgba(217, 68, 31, 0.18);
+    }
+
+    .compare-button:hover:not(:disabled) {
+      filter: brightness(1.07);
+    }
+
+    .compare-button:disabled {
+      opacity: 0.45;
+      cursor: not-allowed;
+    }
+
+    .copy-button {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      min-height: 34px;
+      padding: 0 10px;
+      border: 1px solid #dbe0e7;
+      border-radius: 4px;
+      background: #ffffff;
+      color: #596575;
+      font-size: 8px;
+      font-weight: 700;
+      letter-spacing: 0.03em;
+      text-transform: uppercase;
+      cursor: pointer;
+    }
+
+    .copy-button:hover {
+      border-color: #f0b7a5;
+      color: #bd3e1c;
+    }
+
+    .phone-picker {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 6px;
+      max-height: 238px;
+      padding: 11px 14px;
+      overflow-y: auto;
+    }
+
+    .picker-item {
+      display: flex;
+      align-items: center;
+      gap: 7px;
+      min-width: 0;
+      min-height: 48px;
+      padding: 7px 8px;
+      border: 1px solid #e4e8ed;
+      border-radius: 5px;
+      background: #fafbfc;
+      color: inherit;
+      text-align: left;
+      cursor: pointer;
+      transition: border-color 130ms, background 130ms;
+    }
+
+    .picker-item[hidden] {
+      display: none;
+    }
+
+    .picker-item:hover {
+      border-color: #f0b7a5;
+      background: #fff8f5;
+    }
+
+    .picker-item.is-selected {
+      border-color: #e9542d;
+      background: #fff1eb;
+      box-shadow: 0 0 0 2px rgba(233, 84, 45, 0.08);
+    }
+
+    .picker-art {
+      display: grid;
+      width: 22px;
+      flex-shrink: 0;
+      place-items: center;
+    }
+
+    .picker-copy {
+      display: grid;
+      gap: 2px;
+      min-width: 0;
+      flex: 1;
+    }
+
+    .picker-copy strong {
+      overflow: hidden;
+      color: #38424f;
+      font-size: 8.5px;
+      font-weight: 700;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .picker-copy small {
+      overflow: hidden;
+      color: #98a2ae;
+      font-size: 6.5px;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .picker-check {
+      display: grid;
+      width: 14px;
+      height: 14px;
+      flex-shrink: 0;
+      place-items: center;
+      border: 1px solid #dbe0e7;
+      border-radius: 3px;
+      background: #ffffff;
+      color: transparent;
+      font-size: 8px;
+      font-weight: 800;
+    }
+
+    .picker-item.is-selected .picker-check {
+      border-color: #d9441f;
+      background: #d9441f;
+      color: #ffffff;
+    }
+
+    .compare-message {
+      min-height: 29px;
+      margin: 0;
+      padding: 8px 14px;
+      border-top: 1px solid #edf0f3;
+      background: #fafbfc;
+      color: #8a94a2;
+      font-size: 8px;
+    }
+
+    .compare-summary {
+      display: grid;
+      grid-template-columns: repeat(var(--columns, 2), minmax(0, 1fr));
+      gap: 10px;
+      margin-bottom: 12px;
+    }
+
+    .compare-phone {
+      position: relative;
+      display: grid;
+      justify-items: center;
+      gap: 2px;
+      overflow: hidden;
+      padding: 14px 14px 12px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background:
+        radial-gradient(circle at 50% 0%, #f7f9fc 0%, transparent 60%),
+        #ffffff;
+      text-align: center;
+      box-shadow: 0 1px 2px rgba(23, 32, 44, 0.035);
+    }
+
+    .compare-phone-brand {
+      color: #d9441f;
+      font-size: 6.5px;
+      font-weight: 800;
+      letter-spacing: 0.09em;
+      text-transform: uppercase;
+    }
+
+    .compare-phone-monogram {
+      display: grid;
+      width: 56px;
+      height: 56px;
+      margin: 8px 0;
+      place-items: center;
+      border-radius: 14px;
+      background: linear-gradient(145deg, #2d3540, #171c23);
+      color: #ff9b7b;
+      font-size: 20px;
+      font-weight: 800;
+      transform: rotate(-4deg);
+    }
+
+    .compare-phone h3 {
+      display: -webkit-box;
+      overflow: hidden;
+      margin: 0;
+      color: #202832;
+      font-size: 12px;
+      font-weight: 700;
+      line-height: 1.25;
+      -webkit-box-orient: vertical;
+      -webkit-line-clamp: 2;
+    }
+
+    .compare-phone-price {
+      color: #596575;
+      font-size: 12px;
+      font-weight: 800;
+      letter-spacing: -0.03em;
+    }
+
+    .compare-phone-meta {
+      color: #98a2ae;
+      font-size: 7.5px;
+      line-height: 1.4;
+    }
+
+    .compare-phone a {
+      margin-top: 5px;
+      color: #c04928;
+      font-size: 7px;
+      font-weight: 800;
+      letter-spacing: 0.04em;
+      text-decoration: none;
+      text-transform: uppercase;
+    }
+
+    .compare-phone a:hover {
+      color: #e9542d;
+    }
+
+    .compare-table-panel {
+      overflow: hidden;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: #ffffff;
+      box-shadow: 0 1px 2px rgba(23, 32, 44, 0.035), 0 10px 24px rgba(23, 32, 44, 0.025);
+    }
+
+    .panel-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      min-height: 36px;
+      padding: 0 12px;
+      border-bottom: 1px solid #343b45;
+      background: linear-gradient(180deg, #3b434f 0%, #2d343e 100%);
+      color: #ffffff;
+    }
+
+    .panel-head h2 {
+      position: relative;
+      margin: 0;
+      padding-left: 9px;
+      color: #ffffff;
+      font-size: 10px;
+      font-weight: 800;
+      letter-spacing: 0.075em;
+      text-transform: uppercase;
+    }
+
+    .panel-head h2::before {
+      position: absolute;
+      top: 50%;
+      left: 0;
+      width: 3px;
+      height: 12px;
+      border-radius: 999px;
+      background: #ff7a50;
+      content: '';
+      transform: translateY(-50%);
+    }
+
+    .difference-legend {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      color: #aeb9c8;
+      font-size: 7.5px;
+      font-weight: 600;
+    }
+
+    .difference-legend i {
+      width: 7px;
+      height: 7px;
+      border-radius: 2px;
+      background: #ffe8df;
+      box-shadow: 0 0 0 1px #f3c6b8 inset;
+    }
+
+    .compare-table-wrap {
+      overflow-x: auto;
+    }
+
+    .compare-table {
+      width: 100%;
+      min-width: 620px;
+      border-collapse: collapse;
+      font-size: 9px;
+    }
+
+    .compare-table th,
+    .compare-table td {
+      padding: 9px 12px;
+      border-right: 1px solid #edf0f3;
+      border-bottom: 1px solid #edf0f3;
+      text-align: left;
+      vertical-align: top;
+    }
+
+    .compare-table th:last-child,
+    .compare-table td:last-child {
+      border-right: 0;
+    }
+
+    .compare-table thead th {
+      position: sticky;
+      top: 0;
+      z-index: 1;
+      background: #f7f8fa;
+      color: #4d5866;
+      font-size: 8px;
+      font-weight: 800;
+      letter-spacing: 0.035em;
+      text-transform: uppercase;
+    }
+
+    .compare-table thead th:first-child {
+      left: 0;
+      z-index: 2;
+      width: 148px;
+      background: #f2f4f7;
+    }
+
+    .compare-table tbody th[scope='row'] {
+      width: 148px;
+      background: #fafbfc;
+      color: #6c7887;
+      font-size: 8px;
+      font-weight: 600;
+    }
+
+    .compare-table td {
+      color: #3a4553;
+      font-weight: 600;
+      line-height: 1.45;
+    }
+
+    .compare-table td.difference {
+      background: #fff8f4;
+      color: #7e3b25;
+    }
+
+    .compare-table .group-row th {
+      padding: 8px 12px;
+      border-bottom: 1px solid #edf0f3;
+      background: #f3f5f8;
+      color: #596575;
+      font-size: 7.5px;
+      font-weight: 800;
+      letter-spacing: 0.09em;
+      text-transform: uppercase;
+    }
+
+    .compare-table tbody tr:last-child th,
+    .compare-table tbody tr:last-child td {
+      border-bottom: 0;
+    }
+
+    .compare-placeholder {
+      display: grid;
+      justify-items: center;
+      gap: 6px;
+      margin-bottom: 14px;
+      padding: 52px 24px;
+      border: 1px dashed #cbd2dc;
+      border-radius: 9px;
+      background: #ffffff;
+      text-align: center;
+    }
+
+    .placeholder-glyph {
+      display: grid;
+      width: 50px;
+      height: 50px;
+      margin-bottom: 3px;
+      place-items: center;
+      border-radius: 50%;
+      background: #fff1eb;
+      color: #d9441f;
+      font-size: 13px;
+      font-weight: 800;
+      letter-spacing: -0.03em;
+    }
+
+    .compare-placeholder h2 {
+      margin: 0;
+      color: #2a333e;
+      font-size: 16px;
+      font-weight: 700;
+    }
+
+    .compare-placeholder p {
+      max-width: 44ch;
+      margin: 0;
+      color: #7b8694;
+      font-size: 9.5px;
+      line-height: 1.5;
+    }
+
+    .popular-section {
+      margin-top: 18px;
+    }
+
+    .popular-head {
+      display: flex;
+      align-items: flex-end;
+      justify-content: space-between;
+      gap: 16px;
+      margin-bottom: 10px;
+      padding: 0 2px;
+    }
+
+    .popular-head h2 {
+      margin: 0;
+      color: #1d2530;
+      font-size: 21px;
+      font-weight: 700;
+      letter-spacing: -0.04em;
+      line-height: 1;
+    }
+
+    .popular-head > a {
+      color: #596575;
+      font-size: 8px;
+      font-weight: 800;
+      letter-spacing: 0.04em;
+      text-decoration: none;
+      text-transform: uppercase;
+    }
+
+    .popular-head > a:hover {
+      color: var(--accent);
+    }
+
+    .popular-grid {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 9px;
+    }
+
+    .popular-grid a {
+      display: grid;
+      gap: 3px;
+      padding: 12px;
+      border: 1px solid var(--line);
+      border-radius: 7px;
+      background: #ffffff;
+      color: inherit;
+      text-decoration: none;
+      transition: border-color 140ms, box-shadow 140ms, transform 140ms;
+    }
+
+    .popular-grid a:hover {
+      border-color: #c8d0da;
+      box-shadow: 0 10px 24px rgba(23, 32, 44, 0.07);
+      text-decoration: none;
+      transform: translateY(-2px);
+    }
+
+    .popular-grid strong {
+      overflow: hidden;
+      color: #2f3945;
+      font-size: 9px;
+      font-weight: 700;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .popular-grid span {
+      width: fit-content;
+      padding: 1px 4px;
+      border-radius: 2px;
+      background: #f2f4f7;
+      color: #98a2ae;
+      font-size: 6px;
+      font-weight: 800;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+    }
+
+    .popular-grid small {
+      margin-top: 4px;
+      color: #c04928;
+      font-size: 6.5px;
+      font-weight: 700;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+    }
+
+    .catalog-notice {
+      margin: 16px 0 0;
+      color: #9aa4b1;
+      font-size: 8px;
+      text-align: center;
+    }
+
+    .sr-only {
+      position: absolute;
+      width: 1px;
+      height: 1px;
+      padding: 0;
+      margin: -1px;
+      overflow: hidden;
+      clip: rect(0, 0, 0, 0);
+      white-space: nowrap;
+      border: 0;
+    }
+
+    @media (max-width: 980px) {
+      .phone-picker {
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+      }
+
+      .popular-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+    }
+
+    @media (max-width: 700px) {
+      .compare-head {
+        align-items: flex-start;
+      }
+
+      .head-note {
+        display: none;
+      }
+
+      .picker-tools {
+        align-items: stretch;
+        flex-direction: column;
+      }
+
+      .picker-search {
+        max-width: none;
+      }
+
+      .picker-actions {
+        margin-left: 0;
+      }
+
+      .compare-button {
+        flex: 1;
+        justify-content: center;
+      }
+
+      .phone-picker {
+        grid-template-columns: 1fr 1fr;
+      }
+
+      .compare-summary {
+        grid-template-columns: 1fr 1fr;
+      }
+    }
+
+    @media (max-width: 560px) {
+      .compare-page {
+        padding: 12px 12px 0;
+      }
+
+      .picker-head {
+        align-items: flex-start;
+        flex-direction: column;
+        gap: 5px;
+      }
+
+      .selection-count {
+        align-self: flex-start;
+      }
+
+      .picker-tools {
+        padding: 10px;
+      }
+
+      .compare-button,
+      .copy-button {
+        flex: 1;
+        justify-content: center;
+      }
+
+      .phone-picker {
+        grid-template-columns: 1fr;
+        max-height: 220px;
+        padding: 10px;
+      }
+
+      .compare-summary {
+        gap: 7px;
+      }
+
+      .compare-phone {
+        padding: 11px 9px 10px;
+      }
+
+      .compare-phone-monogram {
+        width: 48px;
+        height: 48px;
+        font-size: 17px;
+      }
+
+      .compare-phone h3 {
+        font-size: 10px;
+      }
+
+      .compare-phone-price {
+        font-size: 11px;
+      }
+
+      .compare-phone-meta {
+        font-size: 6.5px;
+      }
+
+      .panel-head {
+        flex-wrap: wrap;
+        gap: 4px;
+        padding: 5px 12px;
+      }
+
+      .difference-legend {
+        font-size: 6.5px;
+      }
+
+      .compare-table {
+        min-width: 540px;
+      }
+
+      .compare-table thead th:first-child,
+      .compare-table tbody th[scope='row'] {
+        width: 118px;
+      }
+
+      .popular-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .popular-head > a {
+        display: none;
+      }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      .picker-item,
+      .popular-grid a {
+        transition: none;
+      }
+    }
+  </style>
 </BaseLayout>

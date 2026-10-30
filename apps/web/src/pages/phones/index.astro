@@ -1,107 +1,210 @@
 ---
 import BaseLayout from '../../layouts/BaseLayout.astro';
 import PhoneCard from '../../components/PhoneCard.astro';
+import DeviceArt from '../../components/DeviceArt.astro';
 import { phones, manufacturers } from '../../data/catalog';
+
+const priceValue = (price: string) => Number(price.replace(/[^0-9]/g, ''));
+const brandCounts = manufacturers
+  .map((brand) => ({ ...brand, count: phones.filter((phone) => phone.manufacturer === brand.slug).length }))
+  .filter((brand) => brand.count > 0);
+const androidCount = phones.filter((phone) => phone.os.includes('Android')).length;
+const iosCount = phones.filter((phone) => phone.os.includes('iOS')).length;
+const under700Count = phones.filter((phone) => priceValue(phone.price) > 0 && priceValue(phone.price) < 700).length;
+const midRangeCount = phones.filter((phone) => priceValue(phone.price) >= 700 && priceValue(phone.price) <= 999).length;
+const flagshipCount = phones.filter((phone) => priceValue(phone.price) >= 1000).length;
+const featured = phones.find((phone) => phone.slug === 'samsung-galaxy-s25-ultra') ?? phones[0];
+const newest = [...phones].sort((a, b) => b.releaseDate.localeCompare(a.releaseDate))[0];
 ---
 
-<BaseLayout title="Phone directory | TechAtlas" description="Browse and filter phones by brand, price, chipset, battery, display, and camera.">
-  <div class="page-shell">
-    <div class="breadcrumbs">Home / Phones</div>
-    <div class="page-head">
-      <h1>Phone directory</h1>
-      <a href="/compare?phones=samsung-galaxy-s25-ultra,google-pixel-9-pro" class="primary-button">Quick compare</a>
-    </div>
-    <p class="catalog-notice">Sample catalog data only. Prices and specifications are illustrative, not live offers.</p>
+<BaseLayout
+  title="Phone directory | TechAtlas"
+  description="Browse and filter phones by brand, operating system, price, and release status. Compare specifications side by side."
+>
+  <div class="directory-page">
+    <nav class="crumbs" aria-label="Breadcrumb">
+      <a href="/">Home</a><span aria-hidden="true">/</span><span>Phones</span>
+    </nav>
 
-    <form id="phone-filters" class="panel" style="margin-bottom: 1.5rem;">
-      <div class="filters">
-        <div class="field">
-          <label for="search">Search</label>
-          <input id="search" name="q" type="search" value="" placeholder="Search for a handset" />
-        </div>
-        <div class="field">
-          <label for="brand">Brand</label>
-          <select id="brand" name="brand">
-            <option value="">All brands</option>
-            {manufacturers.map((brand) => <option value={brand.slug}>{brand.name}</option>)}
-          </select>
-        </div>
-        <div class="field">
-          <label for="os">OS</label>
-          <select id="os" name="os">
-            <option value="">Any OS</option>
-            <option value="android">Android</option>
-            <option value="ios">iOS</option>
-          </select>
-        </div>
-        <div class="field">
-          <label for="price-range">Price</label>
-          <select id="price-range" name="price">
-            <option value="">Any price</option>
-            <option value="under-700">Under $700</option>
-            <option value="700-999">$700 – $999</option>
-            <option value="1000+">$1000+</option>
-          </select>
-        </div>
-        <div class="field">
-          <label for="status">Release status</label>
-          <select id="status" name="status">
-            <option value="">Any status</option>
-            <option value="released">Released</option>
-            <option value="upcoming">Upcoming</option>
-            <option value="rumored">Rumored</option>
-          </select>
-        </div>
-        <div class="field">
-          <label for="sort">Sort by</label>
-          <select id="sort" name="sort">
-            <option value="popular">Popular</option>
-            <option value="name">Name</option>
-            <option value="price-low">Price: low to high</option>
-            <option value="price-high">Price: high to low</option>
-            <option value="release">Release date</option>
-          </select>
+    <header class="directory-hero">
+      <div class="hero-copy">
+        <span class="eyebrow">The phone catalog</span>
+        <h1>Find the phone that <em>fits.</em></h1>
+        <p>Specs, prices and release details for {phones.length} handsets — searchable, filterable, and ready to compare.</p>
+        <div class="hero-stats">
+          <span><strong>{phones.length}</strong> devices</span>
+          <span><strong>{brandCounts.length}</strong> brands</span>
+          <span><strong>{androidCount + iosCount}</strong> platforms</span>
         </div>
       </div>
-      <div class="stack">
-        <button class="primary-button" type="submit">Apply filters</button>
-        <a href="/phones" class="ghost-button">Clear all</a>
+      <div class="hero-devices" aria-hidden="true">
+        <span class="hero-device hero-device--back">
+          <DeviceArt name={newest?.name ?? 'Latest phone'} slug={newest?.slug ?? 'latest'} manufacturer={newest?.manufacturer ?? ''} size="md" width={96} />
+        </span>
+        <span class="hero-device hero-device--front">
+          <DeviceArt name={featured.name} slug={featured.slug} manufacturer={featured.manufacturer} size="lg" width={128} />
+        </span>
+        <span class="hero-orbit"></span>
       </div>
-    </form>
+      <a class="hero-compare" href="/compare?phones=samsung-galaxy-s25-ultra,iphone-16-pro-max">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true">
+          <path d="M8 4 4 8l4 4"></path><path d="M4 8h16"></path>
+          <path d="m16 20 4-4-4-4"></path><path d="M20 16H4"></path>
+        </svg>
+        Quick compare
+      </a>
+    </header>
 
-    <div class="section-header">
-      <h2><span id="result-count">{phones.length}</span> results</h2>
-      <span class="muted">Filters combine and are saved in the URL</span>
-    </div>
+    <div class="directory-layout">
+      <aside class="filters-panel" aria-label="Filter phones" data-filter-panel>
+        <header class="panel-head">
+          <h2>Filters</h2>
+          <a href="/phones" class="reset-link">Reset</a>
+        </header>
 
-    <div id="phone-results" class="grid-4">
-      {phones.map((phone) => <PhoneCard phone={phone} />)}
+        <form id="phone-filters" class="filter-form">
+          <div class="filter-group">
+            <label for="search">Search</label>
+            <div class="search-box">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" aria-hidden="true">
+                <circle cx="11" cy="11" r="7.5"></circle><path d="m20.5 20.5-4.2-4.2"></path>
+              </svg>
+              <input id="search" name="q" type="search" value="" placeholder="Name or model" autocomplete="off" />
+            </div>
+          </div>
+
+          <div class="filter-group">
+            <label for="brand">Brand</label>
+            <select id="brand" name="brand">
+              <option value="">All brands ({phones.length})</option>
+              {brandCounts.map((brand) => <option value={brand.slug}>{brand.name} ({brand.count})</option>)}
+            </select>
+          </div>
+
+          <fieldset class="filter-group filter-fieldset">
+            <legend>Operating system</legend>
+            <div class="choice-list">
+              <label class="choice">
+                <input type="radio" name="os" value="" checked />
+                <span>All platforms</span><small>{androidCount + iosCount}</small>
+              </label>
+              <label class="choice">
+                <input type="radio" name="os" value="android" />
+                <span>Android</span><small>{androidCount}</small>
+              </label>
+              <label class="choice">
+                <input type="radio" name="os" value="ios" />
+                <span>iOS</span><small>{iosCount}</small>
+              </label>
+            </div>
+          </fieldset>
+
+          <div class="filter-group">
+            <label for="price-range">Price</label>
+            <select id="price-range" name="price">
+              <option value="">Any price</option>
+              <option value="under-700">Under $700 ({under700Count})</option>
+              <option value="700-999">$700 – $999 ({midRangeCount})</option>
+              <option value="1000+">$1,000+ ({flagshipCount})</option>
+            </select>
+          </div>
+
+          <div class="filter-group">
+            <label for="status">Release status</label>
+            <select id="status" name="status">
+              <option value="">Any status</option>
+              <option value="released">Released</option>
+              <option value="upcoming">Upcoming</option>
+              <option value="rumored">Rumored</option>
+            </select>
+          </div>
+
+          <button class="apply-button" type="submit">
+            Apply filters
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" aria-hidden="true">
+              <path d="M5 12h14"></path><path d="m14 7 5 5-5 5"></path>
+            </svg>
+          </button>
+
+          <p class="filter-note">Filters update instantly and are saved in the URL.</p>
+        </form>
+      </aside>
+
+      <main class="results-panel">
+        <div class="results-toolbar">
+          <div class="results-summary">
+            <strong><span id="result-count">{phones.length}</span> phones</strong>
+            <span id="result-detail">Showing all devices</span>
+          </div>
+          <div class="toolbar-actions">
+            <button id="filter-toggle" class="filter-toggle" type="button" aria-expanded="false" aria-controls="phone-filters" aria-label="Toggle phone filters" data-filter-toggle>
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true">
+                <path d="M4 6h16"></path><path d="M7 12h10"></path><path d="M10 18h4"></path>
+              </svg>
+              Filters
+            </button>
+            <div class="sort-control">
+              <label for="sort">Sort</label>
+              <select id="sort" name="sort" form="phone-filters">
+                <option value="popular">Most popular</option>
+                <option value="name">Name A–Z</option>
+                <option value="price-low">Price: low to high</option>
+                <option value="price-high">Price: high to low</option>
+                <option value="release">Newest first</option>
+              </select>
+            </div>
+          </div>
+        </div>
+
+        <div id="phone-results" class="phone-grid" aria-live="polite">
+          {phones.map((phone) => <PhoneCard phone={phone} />)}
+        </div>
+
+        <div id="empty-results" class="empty-state hidden" role="status">
+          <span class="empty-glyph" aria-hidden="true">?</span>
+          <h3>No phones match these filters</h3>
+          <p>Try a different brand, a wider price range, or clear the filters to see the full catalog.</p>
+          <a href="/phones" class="empty-action">Clear everything</a>
+        </div>
+
+        <p class="catalog-notice">Sample catalog only. Prices and specifications are illustrative, not live offers.</p>
+      </main>
     </div>
-    <p id="empty-results" class="panel empty-state hidden" role="status">No phones match these filters. Try broadening your search.</p>
   </div>
+
   <script>
     const form = document.querySelector<HTMLFormElement>('#phone-filters');
     const results = document.querySelector<HTMLElement>('#phone-results');
     const count = document.querySelector<HTMLElement>('#result-count');
+    const detail = document.querySelector<HTMLElement>('#result-detail');
     const empty = document.querySelector<HTMLElement>('#empty-results');
+    const filterToggle = document.querySelector<HTMLButtonElement>('[data-filter-toggle]');
+    const filterPanel = document.querySelector<HTMLElement>('[data-filter-panel]');
+
     if (!form || !results || !count || !empty) throw new Error('Phone filters did not render.');
 
     const fields = {
       q: form.elements.namedItem('q') as HTMLInputElement,
       brand: form.elements.namedItem('brand') as HTMLSelectElement,
-      os: form.elements.namedItem('os') as HTMLSelectElement,
       price: form.elements.namedItem('price') as HTMLSelectElement,
       status: form.elements.namedItem('status') as HTMLSelectElement,
       sort: form.elements.namedItem('sort') as HTMLSelectElement
     };
+    const osOptions = [...form.querySelectorAll<HTMLInputElement>('input[name="os"]')];
     const cards = [...results.querySelectorAll<HTMLElement>('[data-phone-card]')];
     const query = new URLSearchParams(window.location.search);
+
     fields.q.value = query.get('q') || '';
     fields.brand.value = query.get('brand') || '';
-    fields.os.value = query.get('os') || '';
     fields.price.value = query.get('price') || '';
     fields.status.value = query.get('status') || '';
     fields.sort.value = query.get('sort') || 'popular';
+
+    const requestedOs = query.get('os') || '';
+    const osMatch = osOptions.find((option) => option.value === requestedOs);
+    osOptions.forEach((option) => { option.checked = option === (osMatch ?? osOptions[0]); });
+
+    const selectedOs = () => osOptions.find((option) => option.checked)?.value ?? '';
 
     function matchesPrice(price: number, range: string) {
       if (!range) return true;
@@ -118,7 +221,7 @@ import { phones, manufacturers } from '../../data/catalog';
         const statusMatches = !fields.status.value || card.dataset.status === fields.status.value;
         return (!term || card.dataset.name?.includes(term))
           && (!fields.brand.value || card.dataset.manufacturer === fields.brand.value)
-          && (!fields.os.value || card.dataset.os === fields.os.value)
+          && (!selectedOs() || card.dataset.os === selectedOs())
           && matchesPrice(price, fields.price.value)
           && statusMatches;
       });
@@ -129,19 +232,28 @@ import { phones, manufacturers } from '../../data/catalog';
         if (sorting === 'price-low') return Number(a.dataset.price || 0) - Number(b.dataset.price || 0);
         if (sorting === 'price-high') return Number(b.dataset.price || 0) - Number(a.dataset.price || 0);
         if (sorting === 'release') return (b.dataset.release || '').localeCompare(a.dataset.release || '');
-        return cards.indexOf(a) - cards.indexOf(b);
+        return Number(b.dataset.rating || 0) - Number(a.dataset.rating || 0);
       });
 
       cards.forEach((card) => { card.hidden = !filtered.includes(card); });
       filtered.forEach((card) => results.append(card));
       count.textContent = String(filtered.length);
+      if (detail) {
+        const fragmentCount = [term, fields.brand.value, selectedOs(), fields.price.value, fields.status.value].filter(Boolean).length;
+        detail.textContent = filtered.length === cards.length
+          ? 'Showing all devices'
+          : `${fragmentCount} filter${fragmentCount === 1 ? '' : 's'} active`;
+      }
       empty.classList.toggle('hidden', filtered.length > 0);
 
       if (updateUrl) {
         const params = new URLSearchParams();
-        Object.entries(fields).forEach(([key, field]) => {
-          if (field.value && !(key === 'sort' && field.value === 'popular')) params.set(key, field.value);
-        });
+        if (fields.q.value.trim()) params.set('q', fields.q.value.trim());
+        if (fields.brand.value) params.set('brand', fields.brand.value);
+        if (selectedOs()) params.set('os', selectedOs());
+        if (fields.price.value) params.set('price', fields.price.value);
+        if (fields.status.value) params.set('status', fields.status.value);
+        if (fields.sort.value && fields.sort.value !== 'popular') params.set('sort', fields.sort.value);
         const suffix = params.toString();
         history.replaceState({}, '', `${window.location.pathname}${suffix ? `?${suffix}` : ''}`);
       }
@@ -153,6 +265,742 @@ import { phones, manufacturers } from '../../data/catalog';
     });
     fields.q.addEventListener('input', () => applyFilters(true));
     form.addEventListener('change', () => applyFilters(true));
+
+    filterToggle?.addEventListener('click', () => {
+      const open = filterPanel?.classList.toggle('is-open') ?? false;
+      filterToggle.setAttribute('aria-expanded', String(open));
+    });
+
     applyFilters(false);
   </script>
+
+  <style>
+    :global(body) {
+      background: #eef1f4;
+      font-family: 'Segoe UI', system-ui, -apple-system, BlinkMacSystemFont, Arial, sans-serif;
+    }
+
+    .directory-page {
+      --ink: #1b212a;
+      --muted: #6e7887;
+      --line: #dbe0e7;
+      --accent: #e9542d;
+      width: 100%;
+      max-width: 1240px;
+      margin: 0 auto;
+      padding: 16px 18px 0;
+      color: var(--ink);
+    }
+
+    .crumbs {
+      display: flex;
+      align-items: center;
+      gap: 7px;
+      margin-bottom: 12px;
+      color: #8a94a2;
+      font-size: 9px;
+      font-weight: 600;
+    }
+
+    .crumbs a {
+      color: #586575;
+      text-decoration: none;
+    }
+
+    .crumbs a:hover {
+      color: var(--accent);
+    }
+
+    .directory-hero {
+      position: relative;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 24px;
+      overflow: hidden;
+      min-height: 172px;
+      margin-bottom: 14px;
+      padding: 24px 28px;
+      border-radius: 10px;
+      background:
+        radial-gradient(circle at 82% 14%, rgba(255, 122, 80, 0.28) 0%, transparent 34%),
+        radial-gradient(circle at 16% 100%, rgba(37, 96, 146, 0.2) 0%, transparent 38%),
+        linear-gradient(120deg, #171c23 0%, #252d38 100%);
+      color: #ffffff;
+      box-shadow: 0 18px 40px rgba(20, 26, 34, 0.13);
+      isolation: isolate;
+    }
+
+    .hero-copy {
+      position: relative;
+      z-index: 2;
+      max-width: 580px;
+    }
+
+    .eyebrow {
+      display: block;
+      margin-bottom: 8px;
+      color: #ffad90;
+      font-size: 8px;
+      font-weight: 800;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+    }
+
+    .directory-hero h1 {
+      margin: 0 0 6px;
+      color: #ffffff;
+      font-size: clamp(28px, 3.4vw, 42px);
+      font-weight: 700;
+      letter-spacing: -0.05em;
+      line-height: 1;
+    }
+
+    .directory-hero h1 em {
+      color: #ff9b7b;
+      font-style: normal;
+    }
+
+    .directory-hero p {
+      max-width: 52ch;
+      margin: 0;
+      color: #b2bcc9;
+      font-size: 10.5px;
+      line-height: 1.55;
+    }
+
+    .hero-stats {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 18px;
+      margin-top: 15px;
+    }
+
+    .hero-stats span {
+      display: inline-flex;
+      align-items: baseline;
+      gap: 5px;
+      color: #8793a3;
+      font-size: 8px;
+      font-weight: 700;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+    }
+
+    .hero-stats strong {
+      color: #ffffff;
+      font-size: 16px;
+      font-weight: 800;
+      letter-spacing: -0.03em;
+    }
+
+    .hero-devices {
+      position: relative;
+      z-index: 1;
+      display: flex;
+      align-items: flex-end;
+      justify-content: center;
+      width: 240px;
+      flex-shrink: 0;
+      min-height: 150px;
+    }
+
+    .hero-device {
+      display: block;
+      filter: drop-shadow(0 16px 22px rgba(0, 0, 0, 0.3));
+    }
+
+    .hero-device--back {
+      position: absolute;
+      right: 10px;
+      bottom: -4px;
+      opacity: 0.55;
+      transform: rotate(9deg) translateY(-4px);
+    }
+
+    .hero-device--front {
+      position: relative;
+      z-index: 2;
+      transform: rotate(-4deg) translateY(10px);
+    }
+
+    .hero-orbit {
+      position: absolute;
+      width: 190px;
+      height: 190px;
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      border-radius: 50%;
+      box-shadow: 0 0 0 30px rgba(255, 255, 255, 0.025);
+    }
+
+    .hero-compare {
+      position: absolute;
+      right: 22px;
+      bottom: 18px;
+      z-index: 3;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 7px 10px;
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      border-radius: 3px;
+      background: rgba(8, 12, 18, 0.46);
+      color: #f3f6fa;
+      font-size: 8px;
+      font-weight: 800;
+      letter-spacing: 0.065em;
+      text-decoration: none;
+      text-transform: uppercase;
+      backdrop-filter: blur(8px);
+      transition: background 140ms, border-color 140ms;
+    }
+
+    .hero-compare:hover {
+      border-color: rgba(255, 122, 80, 0.6);
+      background: rgba(233, 84, 45, 0.35);
+      text-decoration: none;
+    }
+
+    .directory-layout {
+      display: grid;
+      grid-template-columns: 236px minmax(0, 1fr);
+      gap: 14px;
+      align-items: start;
+    }
+
+    .filters-panel {
+      position: sticky;
+      top: 112px;
+      overflow: hidden;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: #ffffff;
+      box-shadow: 0 1px 2px rgba(23, 32, 44, 0.035), 0 10px 24px rgba(23, 32, 44, 0.025);
+    }
+
+    .panel-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      min-height: 36px;
+      padding: 0 12px;
+      border-bottom: 1px solid #343b45;
+      background: linear-gradient(180deg, #3b434f 0%, #2d343e 100%);
+      color: #ffffff;
+    }
+
+    .panel-head h2 {
+      position: relative;
+      margin: 0;
+      padding-left: 9px;
+      color: #ffffff;
+      font-size: 10px;
+      font-weight: 800;
+      letter-spacing: 0.075em;
+      text-transform: uppercase;
+    }
+
+    .panel-head h2::before {
+      position: absolute;
+      top: 50%;
+      left: 0;
+      width: 3px;
+      height: 12px;
+      border-radius: 999px;
+      background: #ff7a50;
+      content: '';
+      transform: translateY(-50%);
+    }
+
+    .reset-link {
+      color: #aeb9c8;
+      font-size: 8px;
+      font-weight: 700;
+      letter-spacing: 0.04em;
+      text-decoration: none;
+      text-transform: uppercase;
+    }
+
+    .reset-link:hover {
+      color: #ffffff;
+      text-decoration: none;
+    }
+
+    .filter-form {
+      display: grid;
+      gap: 13px;
+      padding: 13px 12px 14px;
+    }
+
+    .filter-group {
+      display: grid;
+      gap: 5px;
+      min-width: 0;
+    }
+
+    .filter-group > label,
+    .filter-group > legend {
+      padding: 0;
+      color: #667181;
+      font-size: 8.5px;
+      font-weight: 800;
+      letter-spacing: 0.09em;
+      text-transform: uppercase;
+    }
+
+    .search-box {
+      display: flex;
+      align-items: center;
+      gap: 7px;
+      height: 34px;
+      padding: 0 9px;
+      border: 1px solid #cbd2dc;
+      border-radius: 4px;
+      background: #ffffff;
+      color: #98a2ae;
+      transition: border-color 140ms, box-shadow 140ms;
+    }
+
+    .search-box:focus-within {
+      border-color: #909aa8;
+      box-shadow: 0 0 0 3px rgba(233, 84, 45, 0.1);
+    }
+
+    .search-box input {
+      flex: 1;
+      min-width: 0;
+      height: 100%;
+      padding: 0;
+      border: 0;
+      outline: 0;
+      background: transparent;
+      color: #2d3540;
+      font-size: 11px;
+      font-weight: 600;
+    }
+
+    .search-box input::placeholder {
+      color: #a2abb7;
+      font-weight: 500;
+    }
+
+    .filter-form select,
+    .sort-control select {
+      width: 100%;
+      height: 34px;
+      padding: 0 26px 0 9px;
+      border: 1px solid #cbd2dc;
+      border-radius: 4px;
+      outline: 0;
+      background-color: #ffffff;
+      color: #2d3540;
+      font-size: 11px;
+      font-weight: 600;
+      cursor: pointer;
+    }
+
+    .filter-form select:focus,
+    .sort-control select:focus {
+      border-color: #909aa8;
+      box-shadow: 0 0 0 3px rgba(233, 84, 45, 0.1);
+    }
+
+    .filter-fieldset {
+      min-width: 0;
+      margin: 0;
+      padding: 0;
+      border: 0;
+    }
+
+    .filter-fieldset > legend {
+      margin-bottom: 5px;
+    }
+
+    .choice-list {
+      display: grid;
+      gap: 2px;
+    }
+
+    .choice {
+      display: flex;
+      align-items: center;
+      gap: 7px;
+      padding: 6px 7px;
+      border-radius: 4px;
+      color: #515d6c;
+      font-size: 10px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background 140ms;
+    }
+
+    .choice:hover {
+      background: #f6f8fa;
+    }
+
+    .choice input {
+      width: 12px;
+      height: 12px;
+      margin: 0;
+      accent-color: #e9542d;
+    }
+
+    .choice span {
+      flex: 1;
+    }
+
+    .choice small {
+      color: #9aa4b1;
+      font-size: 8px;
+      font-weight: 700;
+    }
+
+    .choice:has(input:checked) {
+      background: #fff3ee;
+      color: #b43a1b;
+    }
+
+    .choice:has(input:checked) small {
+      color: #d06a4c;
+    }
+
+    .apply-button {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 7px;
+      width: 100%;
+      min-height: 35px;
+      order: 9;
+      border: 1px solid #c43d1c;
+      border-radius: 4px;
+      background: linear-gradient(180deg, #f7623a 0%, #d9441f 100%);
+      color: #ffffff;
+      font-size: 9px;
+      font-weight: 800;
+      letter-spacing: 0.075em;
+      text-transform: uppercase;
+      cursor: pointer;
+      box-shadow: 0 3px 9px rgba(217, 68, 31, 0.2), 0 1px 0 rgba(255, 255, 255, 0.2) inset;
+      transition: filter 140ms, transform 140ms;
+    }
+
+    .apply-button:hover {
+      filter: brightness(1.07);
+      transform: translateY(-1px);
+    }
+
+    .filter-note {
+      order: 10;
+      margin: -3px 0 0;
+      color: #a0a9b5;
+      font-size: 7.5px;
+      line-height: 1.4;
+      text-align: center;
+    }
+
+    .results-panel {
+      min-width: 0;
+    }
+
+    .results-toolbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 14px;
+      min-height: 50px;
+      margin-bottom: 10px;
+      padding: 0 13px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: #ffffff;
+      box-shadow: 0 1px 2px rgba(23, 32, 44, 0.03);
+    }
+
+    .results-summary {
+      display: flex;
+      align-items: baseline;
+      gap: 8px;
+      min-width: 0;
+    }
+
+    .results-summary strong {
+      color: #232b35;
+      font-size: 13px;
+      font-weight: 800;
+      letter-spacing: -0.02em;
+      white-space: nowrap;
+    }
+
+    .results-summary span {
+      overflow: hidden;
+      color: #8a94a2;
+      font-size: 9px;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .toolbar-actions {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      flex-shrink: 0;
+    }
+
+    .sort-control {
+      display: flex;
+      align-items: center;
+      gap: 7px;
+    }
+
+    .sort-control label {
+      color: #8a94a2;
+      font-size: 8px;
+      font-weight: 700;
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+    }
+
+    .sort-control select {
+      width: 132px;
+      height: 31px;
+      font-size: 10px;
+    }
+
+    .filter-toggle {
+      display: none;
+      align-items: center;
+      gap: 5px;
+      height: 31px;
+      padding: 0 9px;
+      border: 1px solid #cbd2dc;
+      border-radius: 4px;
+      background: #fafbfc;
+      color: #546173;
+      font-size: 8px;
+      font-weight: 800;
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+      cursor: pointer;
+    }
+
+    .phone-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(182px, 1fr));
+      gap: 10px;
+    }
+
+    .phone-grid > :global([hidden]) {
+      display: none;
+    }
+
+    .empty-state {
+      display: grid;
+      justify-items: center;
+      gap: 6px;
+      padding: 48px 24px;
+      border: 1px dashed #cbd2dc;
+      border-radius: 8px;
+      background: #ffffff;
+      text-align: center;
+    }
+
+    .empty-state.hidden {
+      display: none;
+    }
+
+    .empty-glyph {
+      display: grid;
+      width: 42px;
+      height: 42px;
+      margin-bottom: 4px;
+      place-items: center;
+      border-radius: 50%;
+      background: #fff1eb;
+      color: #d9441f;
+      font-size: 18px;
+      font-weight: 800;
+    }
+
+    .empty-state h3 {
+      margin: 0;
+      color: #2a333e;
+      font-size: 14px;
+      font-weight: 700;
+    }
+
+    .empty-state p {
+      max-width: 40ch;
+      margin: 0;
+      color: #7b8694;
+      font-size: 10px;
+      line-height: 1.5;
+    }
+
+    .empty-action {
+      margin-top: 7px;
+      padding: 7px 10px;
+      border-radius: 3px;
+      background: #1f262f;
+      color: #ffffff;
+      font-size: 8px;
+      font-weight: 800;
+      letter-spacing: 0.05em;
+      text-decoration: none;
+      text-transform: uppercase;
+    }
+
+    .empty-action:hover {
+      background: #e9542d;
+      text-decoration: none;
+    }
+
+    .catalog-notice {
+      margin: 14px 0 0;
+      color: #9aa4b1;
+      font-size: 8px;
+      text-align: center;
+    }
+
+    @media (max-width: 900px) {
+      .directory-layout {
+        grid-template-columns: 1fr;
+      }
+
+      .filters-panel {
+        position: static;
+        display: none;
+      }
+
+      .filters-panel.is-open {
+        display: block;
+      }
+
+      .filter-form {
+        grid-template-columns: 1fr 1fr;
+        align-items: start;
+        gap: 12px;
+      }
+
+      .filter-form .filter-group:first-child {
+        grid-column: 1 / -1;
+      }
+
+      .filter-fieldset {
+        grid-row: span 2;
+      }
+
+      .apply-button {
+        order: 0;
+        align-self: end;
+      }
+
+      .filter-note {
+        display: none;
+      }
+
+      .filter-toggle {
+        display: inline-flex;
+      }
+
+      .directory-hero {
+        min-height: 158px;
+        padding: 22px;
+      }
+
+      .hero-devices {
+        width: 190px;
+      }
+    }
+
+    @media (max-width: 640px) {
+      .directory-page {
+        padding: 12px 12px 0;
+      }
+
+      .directory-hero {
+        min-height: 150px;
+        padding: 20px 18px;
+      }
+
+      .hero-devices {
+        position: absolute;
+        right: -28px;
+        bottom: -20px;
+        width: 170px;
+        min-height: 0;
+        opacity: 0.4;
+        transform: scale(0.82);
+        transform-origin: bottom right;
+      }
+
+      .hero-copy {
+        max-width: 88%;
+      }
+
+      .hero-stats {
+        gap: 12px;
+      }
+
+      .hero-compare {
+        display: none;
+      }
+
+      .filter-form {
+        grid-template-columns: 1fr;
+      }
+
+      .filter-fieldset {
+        grid-row: auto;
+      }
+
+      .phone-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 8px;
+      }
+
+      .results-toolbar {
+        min-height: 48px;
+        padding: 0 10px;
+      }
+
+      .results-summary span {
+        display: none;
+      }
+
+      .toolbar-actions {
+        gap: 6px;
+      }
+
+      .sort-control label {
+        display: none;
+      }
+
+      .sort-control select {
+        width: 112px;
+      }
+    }
+
+    @media (max-width: 430px) {
+      .phone-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .hero-copy {
+        max-width: 100%;
+      }
+
+      .directory-hero p {
+        max-width: 34ch;
+      }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      .apply-button,
+      .hero-compare {
+        transition: none;
+      }
+    }
+  </style>
 </BaseLayout>

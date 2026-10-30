@@ -2,44 +2,233 @@
 import '../styles/global.css';
 import Navigation from '../components/Navigation.astro';
 
-const { title = 'TechAtlas', description = 'Premium mobile discovery, comparison, and news platform.' } = Astro.props;
-const apiBase = import.meta.env.PUBLIC_API_BASE ?? 'http://localhost:8080';
+const {
+  title = 'TechAtlas — phone specs, reviews, news and comparisons',
+  description = 'Explore phone specifications, expert reviews, buying guides, comparisons and the latest mobile technology news.'
+} = Astro.props;
+
+const year = new Date().getFullYear();
 ---
 
+<!doctype html>
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <meta name="description" content={description} />
+    <meta name="theme-color" content="#171b22" />
+    <meta property="og:title" content={title} />
+    <meta property="og:description" content={description} />
+    <meta property="og:type" content="website" />
     <title>{title}</title>
   </head>
-  <body data-api-base={apiBase}>
+  <body>
+    <a class="skip-link" href="#main-content">Skip to content</a>
     <Navigation />
-    <main>
+    <main id="main-content">
       <slot />
     </main>
-    <script is:inline>
-      const apiBase = document.body.dataset.apiBase;
-      fetch(`${apiBase}/api/v1/branding`)
-        .then((response) => {
-          if (!response.ok) throw new Error(`Brand settings unavailable (${response.status})`);
-          return response.json();
-        })
-        .then((settings) => {
-        document.querySelectorAll('[data-brand-name]').forEach((node) => {
-          node.textContent = settings.brand_name || 'TechAtlas';
-        });
-        document.querySelectorAll('[data-logo-letter]').forEach((node) => {
-          node.textContent = settings.logo_text || 'T';
-        });
-        document.querySelectorAll('[data-hero-title]').forEach((node) => {
-          node.textContent = settings.hero_title || 'Find the right phone faster.';
-        });
-        if (/^#[0-9a-f]{6}$/i.test(settings.accent_color || '')) {
-          document.documentElement.style.setProperty('--accent', settings.accent_color);
-        }
-      })
-      .catch((error) => console.warn('Unable to load server branding settings', error));
-    </script>
+
+    <footer class="site-footer">
+      <div class="footer-inner">
+        <div class="footer-brand-column">
+          <a class="footer-brand" href="/" aria-label="TechAtlas home">
+            <span class="footer-mark" aria-hidden="true"></span>
+            <span>Tech<span>Atlas</span></span>
+          </a>
+          <p>Clear answers for every phone decision. Browse specs, compare the details that matter, and follow the stories shaping mobile technology.</p>
+          <span class="footer-edition">Independent catalog · 2026 edition</span>
+        </div>
+
+        <nav class="footer-column" aria-label="Explore">
+          <h2>Explore</h2>
+          <a href="/phones">Phone directory</a>
+          <a href="/compare">Compare phones</a>
+          <a href="/brands">Manufacturers</a>
+          <a href="/phones?price=under-700">Deals under $700</a>
+        </nav>
+
+        <nav class="footer-column" aria-label="Read">
+          <h2>Read</h2>
+          <a href="/news">Latest news</a>
+          <a href="/reviews">Reviews</a>
+          <a href="/videos">Videos</a>
+          <a href="/phones?status=upcoming">Coming soon</a>
+        </nav>
+
+        <nav class="footer-column" aria-label="About">
+          <h2>About</h2>
+          <a href="/login">Account</a>
+          <a href="/admin">Admin dashboard</a>
+          <a href="mailto:tips@techatlas.example">News tips</a>
+          <a href="mailto:hello@techatlas.example">Contact</a>
+        </nav>
+      </div>
+
+      <div class="footer-bottom">
+        <div class="footer-bottom-inner">
+          <p>© {year} TechAtlas. Demo catalog content is illustrative and not a live shop.</p>
+          <p>All product names and trademarks belong to their respective owners.</p>
+        </div>
+      </div>
+    </footer>
   </body>
 </html>
+
+<style>
+  .skip-link {
+    position: fixed;
+    z-index: 999;
+    top: 8px;
+    left: 8px;
+    padding: 8px 12px;
+    border-radius: 4px;
+    background: #ffffff;
+    color: #171b22;
+    font-size: 12px;
+    font-weight: 700;
+    transform: translateY(-160%);
+  }
+
+  .skip-link:focus {
+    transform: translateY(0);
+  }
+
+  .site-footer {
+    margin-top: 36px;
+    border-top: 1px solid #2b323d;
+    background:
+      radial-gradient(circle at 12% 0%, rgba(233, 84, 45, 0.12) 0%, transparent 30%),
+      #12161c;
+    color: #b8c1ce;
+  }
+
+  .footer-inner {
+    display: grid;
+    grid-template-columns: minmax(220px, 1.7fr) repeat(3, minmax(120px, 1fr));
+    gap: 34px;
+    width: 100%;
+    max-width: 1240px;
+    margin: 0 auto;
+    padding: 34px 18px 30px;
+  }
+
+  .footer-brand-column p {
+    max-width: 38ch;
+    margin: 12px 0 14px;
+    color: #8b97a8;
+    font-size: 11px;
+    line-height: 1.6;
+  }
+
+  .footer-brand {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    color: #ffffff;
+    font-size: 20px;
+    font-weight: 800;
+    letter-spacing: -0.045em;
+    text-decoration: none;
+  }
+
+  .footer-brand:hover {
+    text-decoration: none;
+  }
+
+  .footer-brand span span {
+    color: #ff7a50;
+    font-weight: 500;
+  }
+
+  .footer-mark {
+    width: 22px;
+    height: 22px;
+    border-radius: 6px;
+    background: linear-gradient(145deg, #ff7a50, #c63c1b);
+    box-shadow: 0 3px 10px rgba(233, 84, 45, 0.3);
+    transform: rotate(-5deg);
+  }
+
+  .footer-edition {
+    color: #5f6b7c;
+    font-size: 9px;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+  }
+
+  .footer-column {
+    display: grid;
+    align-content: start;
+    gap: 8px;
+  }
+
+  .footer-column h2 {
+    margin: 1px 0 4px;
+    color: #e9eef6;
+    font-size: 9px;
+    font-weight: 800;
+    letter-spacing: 0.11em;
+    text-transform: uppercase;
+  }
+
+  .footer-column a {
+    width: fit-content;
+    color: #8b97a8;
+    font-size: 11px;
+    text-decoration: none;
+    transition: color 140ms;
+  }
+
+  .footer-column a:hover {
+    color: #ff9b7b;
+    text-decoration: none;
+  }
+
+  .footer-bottom {
+    border-top: 1px solid #232a33;
+  }
+
+  .footer-bottom-inner {
+    display: flex;
+    justify-content: space-between;
+    gap: 16px;
+    width: 100%;
+    max-width: 1240px;
+    margin: 0 auto;
+    padding: 13px 18px;
+  }
+
+  .footer-bottom p {
+    color: #5f6b7c;
+    font-size: 9px;
+    line-height: 1.5;
+  }
+
+  @media (max-width: 820px) {
+    .footer-inner {
+      grid-template-columns: 1.5fr 1fr 1fr;
+    }
+
+    .footer-brand-column {
+      grid-column: 1 / -1;
+    }
+  }
+
+  @media (max-width: 560px) {
+    .footer-inner {
+      grid-template-columns: 1fr 1fr;
+      gap: 24px;
+    }
+
+    .footer-brand-column {
+      grid-column: 1 / -1;
+    }
+
+    .footer-bottom-inner {
+      flex-direction: column;
+      gap: 4px;
+    }
+  }
+</style>

@@ -1,9 +1,43 @@
 ---
+import DeviceArt from './DeviceArt.astro';
+
+interface Props {
+  phone: {
+    slug: string;
+    name: string;
+    manufacturer: string;
+    price: string;
+    releaseDate: string;
+    status: string;
+    os: string;
+    display: string;
+    chipset: string;
+    battery: string;
+    camera: string;
+    rating: number;
+  };
+}
+
 const { phone } = Astro.props;
+
+const tones: Record<string, { wash: string; glow: string }> = {
+  samsung: { wash: '#eaf0ff', glow: '#88a7ff' },
+  apple: { wash: '#f0f2f5', glow: '#bfc7d2' },
+  google: { wash: '#eaf4ff', glow: '#78b7ff' },
+  oneplus: { wash: '#fff0f0', glow: '#ff7b83' },
+  xiaomi: { wash: '#fff4e9', glow: '#ffad5c' },
+  vivo: { wash: '#eef1ff', glow: '#8da2ff' },
+  honor: { wash: '#eaf4ff', glow: '#6cb4ff' },
+  oppo: { wash: '#e9fbf6', glow: '#62dbc0' },
+  realme: { wash: '#fff9df', glow: '#f3cf52' },
+  nothing: { wash: '#fff0f0', glow: '#ff8b8b' }
+};
+
+const tone = tones[phone.manufacturer] ?? { wash: '#f2f4f7', glow: '#b7c2d0' };
 ---
 
 <article
-  class="phone-card"
+  class="phone-card-v2"
   data-phone-card
   data-name={phone.name.toLowerCase()}
   data-manufacturer={phone.manufacturer}
@@ -11,20 +45,240 @@ const { phone } = Astro.props;
   data-price={Number(phone.price.replace(/[^0-9]/g, ''))}
   data-status={phone.status.toLowerCase()}
   data-release={phone.releaseDate}
+  data-rating={phone.rating}
+  style={`--card-wash:${tone.wash};--card-glow:${tone.glow}`}
 >
-  <div class="card-topline">
-    <span class="pill">{phone.status}</span>
-    <span class="rating">★ {phone.rating}</span>
-  </div>
-  <h3><a href={`/phones/${phone.slug}`}>{phone.name}</a></h3>
-  <p class="muted">{phone.display}</p>
-  <ul>
-    <li>{phone.chipset}</li>
-    <li>{phone.battery}</li>
-    <li>{phone.camera}</li>
-  </ul>
-  <div class="card-footer">
-    <strong>{phone.price}</strong>
-    <a href={`/compare?phones=${phone.slug}`} class="inline-link">Compare</a>
+  <a class="card-media" href={`/phones/${phone.slug}`} aria-label={`View ${phone.name}`}>
+    <span class="card-status">{phone.status}</span>
+    <span class="card-rating">★ {phone.rating}</span>
+    <span class="card-art">
+      <DeviceArt name={phone.name} slug={phone.slug} manufacturer={phone.manufacturer} size="md" width={72} />
+    </span>
+    <span class="card-grid" aria-hidden="true"></span>
+  </a>
+
+  <div class="card-copy">
+    <h3><a href={`/phones/${phone.slug}`}>{phone.name}</a></h3>
+    <p class="card-display">{phone.display}</p>
+    <ul class="card-specs">
+      <li>{phone.chipset}</li>
+      <li>{phone.battery}</li>
+      <li>{phone.camera}</li>
+    </ul>
+    <div class="card-footer">
+      <strong>{phone.price}</strong>
+      <a class="compare-link" href={`/compare?phones=${phone.slug}`}>
+        Compare
+        <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" aria-hidden="true">
+          <path d="M8 4 4 8l4 4"></path>
+          <path d="M4 8h16"></path>
+          <path d="m16 20 4-4-4-4"></path>
+          <path d="M20 16H4"></path>
+        </svg>
+      </a>
+    </div>
   </div>
 </article>
+
+<style>
+  .phone-card-v2 {
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    min-width: 0;
+    border: 1px solid #dbe0e7;
+    border-radius: 8px;
+    background: #ffffff;
+    box-shadow: 0 1px 2px rgba(23, 32, 44, 0.035);
+    transition: border-color 160ms, box-shadow 160ms, transform 160ms;
+  }
+
+  .phone-card-v2:hover {
+    border-color: #c8d0da;
+    box-shadow: 0 14px 30px rgba(23, 32, 44, 0.08);
+    transform: translateY(-2px);
+  }
+
+  .card-media {
+    position: relative;
+    display: grid;
+    height: 172px;
+    place-items: center;
+    overflow: hidden;
+    background:
+      radial-gradient(circle at 50% 30%, var(--card-wash) 0%, transparent 64%),
+      linear-gradient(160deg, #fbfcfd 0%, #f2f4f7 100%);
+    text-decoration: none;
+    isolation: isolate;
+  }
+
+  .card-media:hover {
+    text-decoration: none;
+  }
+
+  .card-grid {
+    position: absolute;
+    z-index: -1;
+    inset: 0;
+    background-image:
+      linear-gradient(rgba(31, 42, 55, 0.035) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(31, 42, 55, 0.03) 1px, transparent 1px);
+    background-size: 24px 24px;
+    mask-image: radial-gradient(circle at 50% 42%, #000 0%, transparent 72%);
+  }
+
+  .card-art {
+    display: grid;
+    place-items: end center;
+    transition: transform 220ms ease;
+  }
+
+  .phone-card-v2:hover .card-art {
+    transform: translateY(-3px) scale(1.03);
+  }
+
+  .card-status {
+    position: absolute;
+    top: 9px;
+    left: 9px;
+    z-index: 2;
+    padding: 3px 6px;
+    border: 1px solid #cde8d8;
+    border-radius: 3px;
+    background: rgba(241, 251, 246, 0.9);
+    color: #238352;
+    font-size: 7px;
+    font-weight: 800;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    backdrop-filter: blur(4px);
+  }
+
+  .card-rating {
+    position: absolute;
+    top: 9px;
+    right: 9px;
+    z-index: 2;
+    padding: 3px 6px;
+    border: 1px solid rgba(255, 255, 255, 0.8);
+    border-radius: 3px;
+    background: rgba(255, 255, 255, 0.86);
+    color: #d47a13;
+    font-size: 8px;
+    font-weight: 800;
+    box-shadow: 0 1px 3px rgba(31, 42, 55, 0.07);
+    backdrop-filter: blur(4px);
+  }
+
+  .card-copy {
+    display: flex;
+    flex: 1;
+    flex-direction: column;
+    gap: 4px;
+    padding: 11px 12px 12px;
+    border-top: 1px solid #edf0f3;
+  }
+
+  .card-copy h3 {
+    display: -webkit-box;
+    overflow: hidden;
+    min-height: 32px;
+    margin: 0;
+    color: #202832;
+    font-size: 12.5px;
+    font-weight: 700;
+    letter-spacing: -0.012em;
+    line-height: 1.28;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
+  }
+
+  .card-copy h3 a {
+    color: inherit;
+    text-decoration: none;
+  }
+
+  .card-copy h3 a:hover {
+    color: #c63c1b;
+    text-decoration: none;
+  }
+
+  .card-display {
+    overflow: hidden;
+    color: #7b8694;
+    font-size: 9px;
+    line-height: 1.4;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .card-specs {
+    display: grid;
+    gap: 2px;
+    margin: 2px 0 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  .card-specs li {
+    overflow: hidden;
+    color: #7d8896;
+    font-size: 8.5px;
+    line-height: 1.35;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .card-specs li::before {
+    margin-right: 5px;
+    color: var(--card-glow);
+    content: '•';
+  }
+
+  .card-footer {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    margin-top: auto;
+    padding-top: 9px;
+  }
+
+  .card-footer strong {
+    color: #242d38;
+    font-size: 14px;
+    font-weight: 800;
+    letter-spacing: -0.03em;
+  }
+
+  .compare-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 4px 7px;
+    border: 1px solid #e2e6ec;
+    border-radius: 3px;
+    background: #fafbfc;
+    color: #697584;
+    font-size: 7.5px;
+    font-weight: 800;
+    letter-spacing: 0.04em;
+    text-decoration: none;
+    text-transform: uppercase;
+    transition: border-color 140ms, background 140ms, color 140ms;
+  }
+
+  .compare-link:hover {
+    border-color: #f0b7a5;
+    background: #fff1eb;
+    color: #bd3e1c;
+    text-decoration: none;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .phone-card-v2,
+    .card-art {
+      transition: none;
+    }
+  }
+</style>

@@ -1,64 +1,787 @@
 ---
+import { phones } from '../data/catalog';
+
+const path = Astro.url.pathname;
 const navItems = [
-  { label: 'Home', href: '/' },
-  { label: 'News', href: '/news' },
+  { label: 'Phones', href: '/phones' },
   { label: 'Reviews', href: '/reviews' },
-  { label: 'Phone finder', href: '/phones' },
-  { label: 'Compare', href: '/compare?phones=samsung-galaxy-s25-ultra,google-pixel-9-pro' },
+  { label: 'News', href: '/news' },
   { label: 'Brands', href: '/brands' },
-  { label: 'Upcoming', href: '/phones?status=upcoming' }
+  { label: 'Deals', href: '/phones?price=under-700' },
+  { label: 'Videos', href: '/videos' }
 ];
+
+const searchPhones = [...phones]
+  .sort((a, b) => a.name.localeCompare(b.name))
+  .map((phone) => ({
+    name: phone.name,
+    slug: phone.slug,
+    brand: phone.manufacturer,
+    price: phone.price
+  }));
+
+const isActive = (href: string) => {
+  const target = href.split('?')[0];
+  if (target === '/') return path === '/';
+  return path === target || path.startsWith(`${target}/`);
+};
 ---
 
 <header class="site-header">
-  <div class="masthead">
-    <div class="container masthead-inner">
+  <div class="topbar">
+    <div class="topbar-inner">
       <a class="brand" href="/" aria-label="TechAtlas home">
-        <span class="brand-mark" data-logo-letter>T</span>
-        <span class="brand-wordmark" data-brand-name>TechAtlas</span>
+        <span class="brand-mark" aria-hidden="true">
+          <span class="brand-mark-line"></span>
+          <span class="brand-mark-line"></span>
+        </span>
+        <span class="brand-wordmark">Tech<span>Atlas</span></span>
       </a>
-      <form class="masthead-search" action="/phones" method="get" role="search">
-        <label class="sr-only" for="site-search">Search phones</label>
-        <input id="site-search" type="search" name="q" placeholder="Search phones, brands and specs" />
-        <button type="submit" aria-label="Search">⌕</button>
+
+      <form class="site-search" action="/phones" method="get" role="search" data-search>
+        <label class="sr-only" for="site-search-input">Search phones, reviews and news</label>
+        <div class="search-field">
+          <svg class="search-icon" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" aria-hidden="true">
+            <circle cx="11" cy="11" r="7.5"></circle>
+            <path d="m20.5 20.5-4.2-4.2"></path>
+          </svg>
+          <input
+            id="site-search-input"
+            type="search"
+            name="q"
+            placeholder="Search phones, specs, news…"
+            autocomplete="off"
+            spellcheck="false"
+            aria-autocomplete="list"
+            aria-controls="search-suggestions"
+            aria-expanded="false"
+          />
+          <kbd class="search-key" aria-hidden="true">/</kbd>
+        </div>
+
+        <div id="search-suggestions" class="search-suggestions" hidden>
+          <span class="suggestions-label">Phones</span>
+          <div class="suggestions-list">
+            {searchPhones.map((phone) => (
+              <a class="suggestion" href={`/phones/${phone.slug}`} data-suggestion-name={phone.name.toLowerCase()}>
+                <span class="suggestion-monogram">{phone.name.slice(0, 1)}</span>
+                <span class="suggestion-copy">
+                  <strong>{phone.name}</strong>
+                  <small>{phone.brand} <i aria-hidden="true">·</i> {phone.price}</small>
+                </span>
+                <span class="suggestion-arrow" aria-hidden="true">↗</span>
+              </a>
+            ))}
+          </div>
+          <a class="suggestion-all" href="/phones" data-suggestion-all>View all phones <span aria-hidden="true">→</span></a>
+          <p class="suggestion-empty" hidden>No phones match that search yet.</p>
+        </div>
       </form>
-      <div class="masthead-tools">
-        <a href="/compare?phones=samsung-galaxy-s25-ultra,google-pixel-9-pro"><span aria-hidden="true">⇄</span><small>Compare</small></a>
-        <a href="/brands"><span aria-hidden="true">◈</span><small>Brands</small></a>
-        <a href="/admin"><span aria-hidden="true">↗</span><small>Admin</small></a>
+
+      <div class="topbar-tools">
+        <a href="mailto:tips@techatlas.example" class="tool-link">Tip us</a>
+        <span class="tool-divider" aria-hidden="true"></span>
+        <a href="/login" class="tool-link">Log in</a>
+        <a href="/login" class="tool-button">Join free</a>
       </div>
-      <button id="nav-toggle" class="menu-toggle" type="button" aria-expanded="false" aria-controls="primary-navigation">
-        Menu
+
+      <button id="nav-toggle" class="menu-toggle" type="button" aria-expanded="false" aria-controls="primary-nav" aria-label="Open navigation">
+        <span></span><span></span><span></span>
       </button>
     </div>
   </div>
-  <div class="nav-band">
-    <div class="container nav-band-inner">
-      <nav id="primary-navigation" aria-label="Primary navigation" class="main-nav">
+
+  <div class="navbar">
+    <div class="navbar-inner">
+      <nav id="primary-nav" class="primary-nav" aria-label="Primary navigation">
         {navItems.map((item) => (
-          <a href={item.href}>{item.label}</a>
+          <a href={item.href} class:list={['nav-link', { active: isActive(item.href) }]} aria-current={isActive(item.href) ? 'page' : undefined}>
+            {item.label}
+          </a>
         ))}
+        <span class="nav-spacer"></span>
+        <a href="/admin" class="nav-link nav-link--admin">Admin</a>
+        <a href="/compare" class="nav-cta">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true">
+            <path d="M8 4 4 8l4 4"></path>
+            <path d="M4 8h16"></path>
+            <path d="m16 20 4-4-4-4"></path>
+            <path d="M20 16H4"></path>
+          </svg>
+          Compare
+        </a>
       </nav>
     </div>
   </div>
 </header>
 
+<style>
+  .site-header {
+    position: sticky;
+    top: 0;
+    z-index: 120;
+  }
+
+  .topbar {
+    background:
+      radial-gradient(circle at 84% -60%, rgba(233, 84, 45, 0.2) 0%, transparent 36%),
+      linear-gradient(180deg, #171b22 0%, #12161c 100%);
+    border-bottom: 1px solid #2b323d;
+    color: #ffffff;
+    box-shadow: 0 1px 0 rgba(255, 255, 255, 0.04) inset;
+  }
+
+  .topbar-inner {
+    display: flex;
+    align-items: center;
+    gap: 22px;
+    width: 100%;
+    max-width: 1240px;
+    min-height: 58px;
+    margin: 0 auto;
+    padding: 0 18px;
+  }
+
+  .brand {
+    display: inline-flex;
+    align-items: center;
+    gap: 9px;
+    flex-shrink: 0;
+    color: #ffffff;
+    text-decoration: none;
+  }
+
+  .brand:hover {
+    text-decoration: none;
+  }
+
+  .brand-mark {
+    position: relative;
+    display: grid;
+    width: 29px;
+    height: 29px;
+    place-items: center;
+    overflow: hidden;
+    border-radius: 7px;
+    background: linear-gradient(145deg, #ff7a50 0%, #e9542d 50%, #bd3518 100%);
+    box-shadow: 0 4px 12px rgba(233, 84, 45, 0.35), 0 1px 0 rgba(255, 255, 255, 0.34) inset;
+    transform: rotate(-4deg);
+  }
+
+  .brand-mark-line {
+    position: absolute;
+    left: 7px;
+    width: 15px;
+    height: 3px;
+    border-radius: 999px;
+    background: #ffffff;
+    transform: translateY(-3px) rotate(28deg);
+  }
+
+  .brand-mark-line:last-child {
+    left: 8px;
+    transform: translateY(4px) rotate(28deg);
+    opacity: 0.7;
+  }
+
+  .brand-wordmark {
+    font-size: 21px;
+    font-weight: 800;
+    letter-spacing: -0.045em;
+    line-height: 1;
+    white-space: nowrap;
+  }
+
+  .brand-wordmark span {
+    color: #ff7a50;
+    font-weight: 500;
+  }
+
+  .site-search {
+    position: relative;
+    flex: 1 1 420px;
+    max-width: 500px;
+  }
+
+  .search-field {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    height: 36px;
+    padding: 0 9px 0 12px;
+    border: 1px solid #343c49;
+    border-radius: 5px;
+    background: #20262f;
+    box-shadow: 0 1px 0 rgba(255, 255, 255, 0.04) inset;
+    transition: border-color 160ms, background 160ms, box-shadow 160ms;
+  }
+
+  .site-search:focus-within .search-field {
+    border-color: #6f7c90;
+    background: #252c37;
+    box-shadow: 0 0 0 3px rgba(233, 84, 45, 0.12);
+  }
+
+  .search-icon {
+    flex-shrink: 0;
+    color: #8995a7;
+  }
+
+  .search-field input {
+    flex: 1;
+    min-width: 0;
+    height: 100%;
+    padding: 0;
+    border: 0;
+    outline: 0;
+    background: transparent;
+    color: #f2f5f9;
+    font-size: 12px;
+    font-weight: 500;
+  }
+
+  .search-field input::placeholder {
+    color: #7e8a9c;
+  }
+
+  .search-key {
+    padding: 2px 5px;
+    border: 1px solid #414a58;
+    border-radius: 3px;
+    background: #181d24;
+    color: #7f8b9d;
+    font-family: inherit;
+    font-size: 10px;
+    line-height: 1.1;
+  }
+
+  .search-suggestions {
+    position: absolute;
+    top: calc(100% + 7px);
+    right: 0;
+    left: 0;
+    z-index: 150;
+    overflow: hidden;
+    border: 1px solid #343c49;
+    border-radius: 7px;
+    background: #1d232c;
+    box-shadow: 0 20px 44px rgba(4, 8, 15, 0.45);
+  }
+
+  .suggestions-label {
+    display: block;
+    padding: 10px 12px 5px;
+    color: #7f8b9d;
+    font-size: 9px;
+    font-weight: 800;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+  }
+
+  .suggestions-list {
+    max-height: 330px;
+    overflow-y: auto;
+  }
+
+  .suggestion {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 8px 12px;
+    border-top: 1px solid #272e38;
+    color: #e9eef6;
+    text-decoration: none;
+  }
+
+  .suggestion:hover,
+  .suggestion.is-active {
+    background: #29313c;
+    text-decoration: none;
+  }
+
+  .suggestion-monogram {
+    display: grid;
+    width: 28px;
+    height: 28px;
+    flex-shrink: 0;
+    place-items: center;
+    border: 1px solid #3b4656;
+    border-radius: 50%;
+    background: linear-gradient(145deg, #2c3541, #1d232b);
+    color: #ff9b7b;
+    font-size: 10px;
+    font-weight: 800;
+  }
+
+  .suggestion-copy {
+    display: grid;
+    gap: 1px;
+    min-width: 0;
+    flex: 1;
+  }
+
+  .suggestion-copy strong {
+    overflow: hidden;
+    color: #f1f4f9;
+    font-size: 12px;
+    font-weight: 600;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .suggestion-copy small {
+    color: #8490a1;
+    font-size: 10px;
+    text-transform: capitalize;
+  }
+
+  .suggestion-copy i {
+    font-style: normal;
+    color: #586375;
+  }
+
+  .suggestion-arrow {
+    color: #697587;
+    font-size: 11px;
+  }
+
+  .suggestion-all {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 10px 12px;
+    border-top: 1px solid #343c49;
+    background: #171c23;
+    color: #ffb499;
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 0.02em;
+    text-decoration: none;
+  }
+
+  .suggestion-all:hover {
+    background: #20262f;
+    text-decoration: none;
+  }
+
+  .suggestion-empty {
+    padding: 16px 12px;
+    color: #8490a1;
+    font-size: 11px;
+  }
+
+  .topbar-tools {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-left: auto;
+    flex-shrink: 0;
+  }
+
+  .tool-link {
+    color: #b4becd;
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 0.055em;
+    text-decoration: none;
+    text-transform: uppercase;
+    transition: color 150ms;
+  }
+
+  .tool-link:hover {
+    color: #ffffff;
+    text-decoration: none;
+  }
+
+  .tool-divider {
+    width: 1px;
+    height: 16px;
+    background: #333b47;
+  }
+
+  .tool-button {
+    padding: 7px 11px;
+    border: 1px solid #e9542d;
+    border-radius: 4px;
+    background: linear-gradient(180deg, #f7623a 0%, #d9441f 100%);
+    color: #ffffff;
+    font-size: 10px;
+    font-weight: 800;
+    letter-spacing: 0.035em;
+    text-decoration: none;
+    text-transform: uppercase;
+    box-shadow: 0 3px 10px rgba(233, 84, 45, 0.25), 0 1px 0 rgba(255, 255, 255, 0.2) inset;
+    transition: filter 150ms, transform 150ms;
+  }
+
+  .tool-button:hover {
+    filter: brightness(1.08);
+    text-decoration: none;
+    transform: translateY(-1px);
+  }
+
+  .menu-toggle {
+    display: none;
+    width: 38px;
+    height: 34px;
+    place-content: center;
+    gap: 4px;
+    flex-shrink: 0;
+    padding: 7px;
+    border: 1px solid #3a434f;
+    border-radius: 4px;
+    background: #20262f;
+    cursor: pointer;
+  }
+
+  .menu-toggle span {
+    display: block;
+    width: 18px;
+    height: 2px;
+    border-radius: 999px;
+    background: #e8edf5;
+    transition: transform 180ms, opacity 180ms;
+  }
+
+  .menu-toggle[aria-expanded='true'] span:nth-child(1) {
+    transform: translateY(6px) rotate(45deg);
+  }
+
+  .menu-toggle[aria-expanded='true'] span:nth-child(2) {
+    opacity: 0;
+  }
+
+  .menu-toggle[aria-expanded='true'] span:nth-child(3) {
+    transform: translateY(-6px) rotate(-45deg);
+  }
+
+  .navbar {
+    background: linear-gradient(180deg, #2c333d 0%, #262d36 100%);
+    border-bottom: 1px solid #1c2229;
+    box-shadow: 0 4px 14px rgba(15, 19, 25, 0.12);
+  }
+
+  .navbar-inner {
+    width: 100%;
+    max-width: 1240px;
+    margin: 0 auto;
+    padding: 0 18px;
+  }
+
+  .primary-nav {
+    display: flex;
+    align-items: stretch;
+    min-height: 38px;
+  }
+
+  .nav-link {
+    position: relative;
+    display: flex;
+    align-items: center;
+    padding: 0 14px;
+    color: #d7dde6;
+    font-size: 10px;
+    font-weight: 800;
+    letter-spacing: 0.065em;
+    text-decoration: none;
+    text-transform: uppercase;
+    white-space: nowrap;
+    transition: background 140ms, color 140ms;
+  }
+
+  .nav-link::after {
+    position: absolute;
+    right: 13px;
+    bottom: 0;
+    left: 13px;
+    height: 2px;
+    border-radius: 2px 2px 0 0;
+    background: #ff7a50;
+    content: '';
+    opacity: 0;
+    transform: scaleX(0.5);
+    transition: opacity 160ms, transform 160ms;
+  }
+
+  .nav-link:hover,
+  .nav-link:focus-visible {
+    background: rgba(255, 255, 255, 0.055);
+    color: #ffffff;
+    text-decoration: none;
+  }
+
+  .nav-link:hover::after,
+  .nav-link.active::after {
+    opacity: 1;
+    transform: scaleX(1);
+  }
+
+  .nav-link.active {
+    background: rgba(255, 255, 255, 0.045);
+    color: #ffffff;
+  }
+
+  .nav-link--admin {
+    color: #99a4b4;
+  }
+
+  .nav-spacer {
+    flex: 1;
+  }
+
+  .nav-cta {
+    display: inline-flex;
+    align-items: center;
+    align-self: center;
+    gap: 5px;
+    margin-left: 8px;
+    padding: 5px 10px;
+    border: 1px solid rgba(255, 255, 255, 0.18);
+    border-radius: 3px;
+    background: rgba(255, 255, 255, 0.08);
+    color: #ffffff;
+    font-size: 9px;
+    font-weight: 800;
+    letter-spacing: 0.05em;
+    text-decoration: none;
+    text-transform: uppercase;
+  }
+
+  .nav-cta:hover {
+    background: rgba(255, 255, 255, 0.14);
+    text-decoration: none;
+  }
+
+  .sr-only {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border: 0;
+  }
+
+  @media (max-width: 980px) {
+    .topbar-inner {
+      gap: 14px;
+    }
+
+    .topbar-tools {
+      display: none;
+    }
+
+    .site-search {
+      max-width: none;
+    }
+
+    .menu-toggle {
+      display: grid;
+    }
+
+    .navbar-inner {
+      position: relative;
+      padding: 0;
+    }
+
+    .primary-nav {
+      display: none;
+      position: absolute;
+      z-index: 60;
+      top: 100%;
+      right: 0;
+      left: 0;
+      flex-direction: column;
+      padding: 6px;
+      background: #232a33;
+      box-shadow: 0 18px 30px rgba(7, 10, 15, 0.3);
+    }
+
+    .primary-nav.is-open {
+      display: flex;
+    }
+
+    .nav-link {
+      min-height: 40px;
+      padding: 0 12px;
+      border-radius: 3px;
+    }
+
+    .nav-link::after {
+      display: none;
+    }
+
+    .nav-link.active {
+      background: rgba(233, 84, 45, 0.16);
+      color: #ffb499;
+    }
+
+    .nav-spacer {
+      display: none;
+    }
+
+    .nav-link--admin {
+      display: none;
+    }
+
+    .nav-cta {
+      justify-content: center;
+      margin: 6px 0 0;
+      padding: 9px 12px;
+    }
+  }
+
+  @media (max-width: 680px) {
+    .topbar-inner {
+      flex-wrap: wrap;
+      gap: 10px;
+      padding: 10px 12px;
+    }
+
+    .brand {
+      order: 1;
+    }
+
+    .menu-toggle {
+      order: 2;
+      margin-left: auto;
+    }
+
+    .site-search {
+      order: 3;
+      flex-basis: 100%;
+    }
+
+    .search-field {
+      height: 38px;
+    }
+
+    .search-key {
+      display: none;
+    }
+
+    .brand-wordmark {
+      font-size: 19px;
+    }
+
+    .navbar-inner {
+      padding: 0;
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .tool-button,
+    .menu-toggle span,
+    .nav-link,
+    .nav-link::after {
+      transition: none;
+    }
+  }
+</style>
+
 <script>
-  const toggle = document.querySelector<HTMLButtonElement>('#nav-toggle');
-  const navigation = document.querySelector<HTMLElement>('#primary-navigation');
+  const searchForm = document.querySelector<HTMLFormElement>('[data-search]');
+  const searchInput = document.querySelector<HTMLInputElement>('#site-search-input');
+  const suggestions = document.querySelector<HTMLElement>('#search-suggestions');
+  const suggestionItems = [...document.querySelectorAll<HTMLAnchorElement>('[data-suggestion-name]')];
+  const suggestionAll = document.querySelector<HTMLAnchorElement>('[data-suggestion-all]');
+  const emptyState = document.querySelector<HTMLElement>('.suggestion-empty');
+  const navToggle = document.querySelector<HTMLButtonElement>('#nav-toggle');
+  const nav = document.querySelector<HTMLElement>('#primary-nav');
 
-  if (!toggle || !navigation) throw new Error('Primary navigation controls did not render.');
+  let activeIndex = -1;
 
-  toggle.addEventListener('click', () => {
-    const expanded = toggle.getAttribute('aria-expanded') === 'true';
-    toggle.setAttribute('aria-expanded', String(!expanded));
-    navigation.classList.toggle('is-open', !expanded);
+  function visibleSuggestions() {
+    return suggestionItems.filter((item) => !item.hidden);
+  }
+
+  function setActive(index: number) {
+    const visible = visibleSuggestions();
+    activeIndex = index;
+    suggestionItems.forEach((item) => item.classList.remove('is-active'));
+    if (visible[activeIndex]) {
+      visible[activeIndex].classList.add('is-active');
+      visible[activeIndex].scrollIntoView({ block: 'nearest' });
+    }
+  }
+
+  function updateSuggestions() {
+    if (!searchInput || !suggestions || !suggestionAll || !emptyState) return;
+    const term = searchInput.value.trim().toLowerCase();
+    if (!term) {
+      suggestions.hidden = true;
+      searchInput.setAttribute('aria-expanded', 'false');
+      return;
+    }
+
+    let matches = 0;
+    suggestionItems.forEach((item) => {
+      const name = item.dataset.suggestionName ?? '';
+      const match = name.includes(term);
+      item.hidden = !match;
+      if (match) matches += 1;
+    });
+
+    suggestionAll.href = `/phones?q=${encodeURIComponent(searchInput.value.trim())}`;
+    suggestionAll.innerHTML = `View all results for “${searchInput.value.trim().replace(/[<>&"]/g, '')}” <span aria-hidden="true">→</span>`;
+    emptyState.hidden = matches > 0;
+    suggestions.hidden = false;
+    searchInput.setAttribute('aria-expanded', 'true');
+    activeIndex = -1;
+  }
+
+  searchInput?.addEventListener('input', updateSuggestions);
+  searchInput?.addEventListener('focus', () => {
+    if (searchInput.value.trim()) updateSuggestions();
   });
 
-  navigation.addEventListener('click', (event) => {
+  searchInput?.addEventListener('keydown', (event) => {
+    const visible = visibleSuggestions();
+    if (event.key === 'ArrowDown') {
+      event.preventDefault();
+      setActive(Math.min(activeIndex + 1, visible.length - 1));
+    } else if (event.key === 'ArrowUp') {
+      event.preventDefault();
+      setActive(Math.max(activeIndex - 1, 0));
+    } else if (event.key === 'Enter' && activeIndex >= 0 && visible[activeIndex]) {
+      event.preventDefault();
+      visible[activeIndex].click();
+    } else if (event.key === 'Escape') {
+      if (suggestions) suggestions.hidden = true;
+      searchInput.setAttribute('aria-expanded', 'false');
+      searchInput.blur();
+    }
+  });
+
+  document.addEventListener('click', (event) => {
+    if (suggestions && searchForm && !searchForm.contains(event.target as Node)) {
+      suggestions.hidden = true;
+      searchInput?.setAttribute('aria-expanded', 'false');
+    }
+  });
+
+  document.addEventListener('keydown', (event) => {
+    const target = event.target as HTMLElement;
+    const isTyping = target.matches('input, textarea, select, [contenteditable="true"]');
+    if (event.key === '/' && !isTyping) {
+      event.preventDefault();
+      searchInput?.focus();
+    }
+  });
+
+  navToggle?.addEventListener('click', () => {
+    const open = navToggle.getAttribute('aria-expanded') === 'true';
+    navToggle.setAttribute('aria-expanded', String(!open));
+    navToggle.setAttribute('aria-label', open ? 'Open navigation' : 'Close navigation');
+    nav?.classList.toggle('is-open', !open);
+  });
+
+  nav?.addEventListener('click', (event) => {
     if (event.target instanceof Element && event.target.closest('a')) {
-      toggle.setAttribute('aria-expanded', 'false');
-      navigation.classList.remove('is-open');
+      navToggle?.setAttribute('aria-expanded', 'false');
+      nav?.classList.remove('is-open');
     }
   });
 </script>

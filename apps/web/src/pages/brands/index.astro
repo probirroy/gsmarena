@@ -1,24 +1,831 @@
 ---
 import BaseLayout from '../../layouts/BaseLayout.astro';
-import { manufacturers } from '../../data/catalog';
+import DeviceArt from '../../components/DeviceArt.astro';
+import { manufacturers, phones } from '../../data/catalog';
+
+const brandRows = manufacturers
+  .map((brand) => {
+    const brandPhones = phones.filter((phone) => phone.manufacturer === brand.slug);
+    const topPhone = [...brandPhones].sort((a, b) => b.rating - a.rating)[0];
+    return { ...brand, phoneCount: brandPhones.length, topPhone };
+  })
+  .sort((a, b) => b.phoneCount - a.phoneCount || a.name.localeCompare(b.name));
+
+const countries = [...new Set(manufacturers.map((brand) => brand.country))].sort();
+const activeBrands = brandRows.filter((brand) => brand.phoneCount > 0).length;
+
+const tones = [
+  ['#eef2ff', '#8ba5ff'],
+  ['#f3f4f6', '#aeb6c2'],
+  ['#fff1eb', '#ff9b7b'],
+  ['#eaf8f4', '#5bc7a8'],
+  ['#fff8e6', '#e7bd4d'],
+  ['#edf7ff', '#6fb6ee'],
+  ['#f7efff', '#b58ae0'],
+  ['#fff0f3', '#ee8ba4']
+];
+
+const brandTone = (index: number) => tones[index % tones.length];
 ---
 
-<BaseLayout title="Brands | TechAtlas" description="Browse manufacturers and product families.">
-  <div class="page-shell">
-    <div class="breadcrumbs">Home / Brands</div>
-    <div class="page-head">
-      <h1>Manufacturer directory</h1>
+<BaseLayout title="Brands | TechAtlas" description="Browse phone manufacturers, their latest devices and catalog coverage.">
+  <div class="brands-page">
+    <nav class="crumbs" aria-label="Breadcrumb">
+      <a href="/">Home</a><span aria-hidden="true">/</span><span>Brands</span>
+    </nav>
+
+    <header class="brands-hero">
+      <span class="hero-grid" aria-hidden="true"></span>
+      <div class="hero-copy">
+        <span class="eyebrow">Manufacturer directory</span>
+        <h1>Every maker.<br /><em>One atlas.</em></h1>
+        <p>From the biggest flagship names to specialist and value-focused brands — find a manufacturer, then dive into the phones that define it.</p>
+        <div class="hero-stats">
+          <span><strong>{manufacturers.length}</strong> brands listed</span>
+          <span><strong>{activeBrands}</strong> with devices</span>
+          <span><strong>{phones.length}</strong> phones indexed</span>
+        </div>
+      </div>
+      <div class="hero-mark" aria-hidden="true">
+        <span class="mark-ring mark-ring--one"></span>
+        <span class="mark-ring mark-ring--two"></span>
+        <span class="mark-letter">A</span>
+        <span class="mark-caption">24° 12′ N · TECHATLAS</span>
+      </div>
+    </header>
+
+    <div class="brand-toolbar">
+      <div class="brand-search">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" aria-hidden="true">
+          <circle cx="11" cy="11" r="7.5"></circle><path d="m20.5 20.5-4.2-4.2"></path>
+        </svg>
+        <label class="sr-only" for="brand-search">Search manufacturers</label>
+        <input id="brand-search" type="search" placeholder="Search manufacturers…" autocomplete="off" />
+      </div>
+      <div class="country-filter">
+        <label for="country-filter">Country</label>
+        <select id="country-filter">
+          <option value="">All countries</option>
+          {countries.map((country) => <option value={country}>{country}</option>)}
+        </select>
+      </div>
+      <span class="brand-count"><strong id="brand-result-count">{brandRows.length}</strong> brands</span>
     </div>
 
-    <div class="grid-4">
-      {manufacturers.map((brand) => (
-        <article class="brand-card">
-          <h3><a href={`/brands/${brand.slug}`}>{brand.name}</a></h3>
-          <p class="muted">{brand.country}</p>
-          <p>{brand.description}</p>
-          <a href={brand.website} target="_blank" rel="noreferrer" class="inline-link">Official site</a>
-        </article>
-      ))}
+    <div class="brand-grid" id="brand-grid">
+      {brandRows.map((brand, index) => {
+        const [wash, glow] = brandTone(index);
+        return (
+          <a
+            class="brand-card"
+            href={`/brands/${brand.slug}`}
+            data-brand-name={brand.name.toLowerCase()}
+            data-brand-country={brand.country}
+            style={`--brand-wash:${wash};--brand-glow:${glow}`}
+          >
+            <span class="brand-head">
+              <span class="brand-monogram" aria-hidden="true">{brand.name.slice(0, 1)}</span>
+              <span class="brand-country">{brand.country}</span>
+            </span>
+            <span class="brand-copy">
+              <strong>{brand.name}</strong>
+              <span>{brand.description}</span>
+            </span>
+            <span class="brand-foot">
+              <span class="brand-count-pill">{brand.phoneCount} {brand.phoneCount === 1 ? 'phone' : 'phones'}</span>
+              {brand.topPhone
+                ? <span class="brand-featured">{brand.topPhone.name}</span>
+                : <span class="brand-featured brand-featured--muted">Catalog coming soon</span>}
+              <span class="brand-arrow" aria-hidden="true">↗</span>
+            </span>
+            {brand.topPhone && (
+              <span class="brand-art" aria-hidden="true">
+                <DeviceArt name={brand.topPhone.name} slug={brand.topPhone.slug} manufacturer={brand.topPhone.manufacturer} size="sm" width={42} />
+              </span>
+            )}
+          </a>
+        );
+      })}
     </div>
+
+    <p class="brand-empty hidden" id="brand-empty" role="status">No manufacturers match that search. Try a different name or country.</p>
+
+    <section class="brand-cta">
+      <div>
+        <span class="cta-eyebrow">Looking for a specific phone?</span>
+        <h2>The directory has filters for that.</h2>
+        <p>Narrow the catalog by brand, platform, price and release status in a few clicks.</p>
+      </div>
+      <a href="/phones">Open the phone directory <span aria-hidden="true">→</span></a>
+      <span class="cta-ghost" aria-hidden="true">FIND</span>
+    </section>
+
+    <p class="catalog-notice">Sample catalog data. Manufacturer descriptions and device counts are illustrative.</p>
   </div>
+
+  <script>
+    const search = document.querySelector<HTMLInputElement>('#brand-search');
+    const country = document.querySelector<HTMLSelectElement>('#country-filter');
+    const cards = [...document.querySelectorAll<HTMLElement>('[data-brand-name]')];
+    const count = document.querySelector<HTMLElement>('#brand-result-count');
+    const empty = document.querySelector<HTMLElement>('#brand-empty');
+
+    function filterBrands() {
+      const term = search?.value.trim().toLowerCase() ?? '';
+      const selectedCountry = country?.value ?? '';
+      let visible = 0;
+
+      cards.forEach((card) => {
+        const matchName = (card.dataset.brandName ?? '').includes(term);
+        const matchCountry = !selectedCountry || card.dataset.brandCountry === selectedCountry;
+        const match = matchName && matchCountry;
+        card.hidden = !match;
+        if (match) visible += 1;
+      });
+
+      if (count) count.textContent = String(visible);
+      empty?.classList.toggle('hidden', visible > 0);
+    }
+
+    search?.addEventListener('input', filterBrands);
+    country?.addEventListener('change', filterBrands);
+  </script>
+
+  <style>
+    :global(body) {
+      background: #eef1f4;
+      font-family: 'Segoe UI', system-ui, -apple-system, BlinkMacSystemFont, Arial, sans-serif;
+    }
+
+    .brands-page {
+      --ink: #1b212a;
+      --line: #dbe0e7;
+      --accent: #e9542d;
+      width: 100%;
+      max-width: 1240px;
+      margin: 0 auto;
+      padding: 16px 18px 0;
+      color: var(--ink);
+    }
+
+    .crumbs {
+      display: flex;
+      align-items: center;
+      gap: 7px;
+      margin-bottom: 12px;
+      color: #8a94a2;
+      font-size: 9px;
+      font-weight: 600;
+    }
+
+    .crumbs a {
+      color: #586575;
+      text-decoration: none;
+    }
+
+    .crumbs a:hover {
+      color: var(--accent);
+    }
+
+    .brands-hero {
+      position: relative;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 24px;
+      overflow: hidden;
+      min-height: 232px;
+      margin-bottom: 14px;
+      padding: 29px 30px;
+      border-radius: 10px;
+      background:
+        radial-gradient(circle at 84% 0%, rgba(255, 122, 80, 0.27) 0%, transparent 34%),
+        radial-gradient(circle at 12% 100%, rgba(37, 96, 146, 0.22) 0%, transparent 40%),
+        linear-gradient(120deg, #171c23 0%, #252d38 100%);
+      color: #ffffff;
+      box-shadow: 0 18px 40px rgba(20, 26, 34, 0.13);
+      isolation: isolate;
+    }
+
+    .hero-grid {
+      position: absolute;
+      z-index: -1;
+      inset: 0;
+      background-image:
+        linear-gradient(rgba(255, 255, 255, 0.04) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255, 255, 255, 0.035) 1px, transparent 1px);
+      background-size: 44px 44px;
+      mask-image: linear-gradient(90deg, rgba(0, 0, 0, 0.9), transparent 80%);
+    }
+
+    .hero-copy {
+      position: relative;
+      z-index: 2;
+      max-width: 600px;
+    }
+
+    .eyebrow {
+      display: block;
+      margin-bottom: 8px;
+      color: #ffad90;
+      font-size: 8px;
+      font-weight: 800;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+    }
+
+    .brands-hero h1 {
+      margin: 0 0 8px;
+      color: #ffffff;
+      font-size: clamp(31px, 4vw, 46px);
+      font-weight: 700;
+      letter-spacing: -0.05em;
+      line-height: 0.98;
+    }
+
+    .brands-hero h1 em {
+      color: #ff9b7b;
+      font-style: normal;
+    }
+
+    .brands-hero p {
+      max-width: 55ch;
+      margin: 0;
+      color: #b2bcc9;
+      font-size: 10.5px;
+      line-height: 1.55;
+    }
+
+    .hero-stats {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 18px;
+      margin-top: 16px;
+    }
+
+    .hero-stats span {
+      display: inline-flex;
+      align-items: baseline;
+      gap: 5px;
+      color: #8793a3;
+      font-size: 8px;
+      font-weight: 700;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+    }
+
+    .hero-stats strong {
+      color: #ffffff;
+      font-size: 15px;
+      font-weight: 800;
+      letter-spacing: -0.03em;
+    }
+
+    .hero-mark {
+      position: relative;
+      display: grid;
+      width: 190px;
+      height: 190px;
+      flex-shrink: 0;
+      place-items: center;
+      margin-right: 16px;
+    }
+
+    .mark-ring {
+      position: absolute;
+      border: 1px solid rgba(255, 255, 255, 0.11);
+      border-radius: 50%;
+    }
+
+    .mark-ring--one {
+      width: 180px;
+      height: 180px;
+      box-shadow: 0 0 0 26px rgba(255, 255, 255, 0.022);
+    }
+
+    .mark-ring--two {
+      width: 116px;
+      height: 116px;
+      border-color: rgba(255, 122, 80, 0.28);
+    }
+
+    .mark-letter {
+      display: grid;
+      width: 70px;
+      height: 70px;
+      place-items: center;
+      border-radius: 18px;
+      background: linear-gradient(145deg, #ff7a50 0%, #d9441f 100%);
+      color: #ffffff;
+      font-size: 34px;
+      font-weight: 800;
+      box-shadow: 0 12px 28px rgba(217, 68, 31, 0.35), 0 1px 0 rgba(255, 255, 255, 0.32) inset;
+      transform: rotate(-6deg);
+    }
+
+    .mark-caption {
+      position: absolute;
+      bottom: 5px;
+      color: rgba(255, 255, 255, 0.28);
+      font-size: 6px;
+      font-weight: 700;
+      letter-spacing: 0.18em;
+    }
+
+    .brand-toolbar {
+      display: flex;
+      align-items: center;
+      gap: 11px;
+      min-height: 54px;
+      margin-bottom: 11px;
+      padding: 0 13px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: #ffffff;
+      box-shadow: 0 1px 2px rgba(23, 32, 44, 0.03);
+    }
+
+    .brand-search {
+      display: flex;
+      align-items: center;
+      gap: 7px;
+      width: min(340px, 100%);
+      height: 34px;
+      padding: 0 10px;
+      border: 1px solid #cbd2dc;
+      border-radius: 4px;
+      background: #ffffff;
+      color: #98a2ae;
+      transition: border-color 140ms, box-shadow 140ms;
+    }
+
+    .brand-search:focus-within {
+      border-color: #909aa8;
+      box-shadow: 0 0 0 3px rgba(233, 84, 45, 0.1);
+    }
+
+    .brand-search input {
+      flex: 1;
+      min-width: 0;
+      height: 100%;
+      padding: 0;
+      border: 0;
+      outline: 0;
+      background: transparent;
+      color: #2d3540;
+      font-size: 11px;
+      font-weight: 600;
+    }
+
+    .brand-search input::placeholder {
+      color: #a2abb7;
+      font-weight: 500;
+    }
+
+    .country-filter {
+      display: flex;
+      align-items: center;
+      gap: 7px;
+    }
+
+    .country-filter label {
+      color: #8a94a2;
+      font-size: 8px;
+      font-weight: 700;
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+    }
+
+    .country-filter select {
+      height: 34px;
+      min-width: 150px;
+      padding: 0 24px 0 9px;
+      border: 1px solid #cbd2dc;
+      border-radius: 4px;
+      outline: 0;
+      background-color: #ffffff;
+      color: #2d3540;
+      font-size: 10px;
+      font-weight: 600;
+      cursor: pointer;
+    }
+
+    .country-filter select:focus {
+      border-color: #909aa8;
+      box-shadow: 0 0 0 3px rgba(233, 84, 45, 0.1);
+    }
+
+    .brand-count {
+      margin-left: auto;
+      color: #8a94a2;
+      font-size: 8.5px;
+      font-weight: 600;
+      white-space: nowrap;
+    }
+
+    .brand-count strong {
+      color: #343e4a;
+      font-size: 11px;
+      font-weight: 800;
+    }
+
+    .brand-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(268px, 1fr));
+      gap: 10px;
+    }
+
+    .brand-card {
+      position: relative;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+      min-height: 184px;
+      padding: 14px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background:
+        radial-gradient(circle at 100% 0%, var(--brand-wash) 0%, transparent 48%),
+        #ffffff;
+      color: inherit;
+      text-decoration: none;
+      isolation: isolate;
+      transition: border-color 150ms, box-shadow 150ms, transform 150ms;
+    }
+
+    .brand-card[hidden] {
+      display: none;
+    }
+
+    .brand-card:hover {
+      border-color: #c8d0da;
+      box-shadow: 0 12px 28px rgba(23, 32, 44, 0.07);
+      text-decoration: none;
+      transform: translateY(-2px);
+    }
+
+    .brand-head {
+      position: relative;
+      z-index: 1;
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 9px;
+    }
+
+    .brand-monogram {
+      display: grid;
+      width: 36px;
+      height: 36px;
+      place-items: center;
+      border-radius: 9px;
+      background: linear-gradient(145deg, #2d3540, #171c23);
+      color: var(--brand-glow);
+      font-size: 15px;
+      font-weight: 800;
+      box-shadow: 0 5px 12px rgba(20, 26, 34, 0.16);
+      transform: rotate(-3deg);
+    }
+
+    .brand-country {
+      padding: 3px 6px;
+      border: 1px solid #e4e8ed;
+      border-radius: 3px;
+      background: rgba(255, 255, 255, 0.7);
+      color: #8993a0;
+      font-size: 6.5px;
+      font-weight: 700;
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+    }
+
+    .brand-copy {
+      position: relative;
+      z-index: 1;
+      display: grid;
+      gap: 3px;
+      max-width: 74%;
+      margin-top: 11px;
+    }
+
+    .brand-copy strong {
+      color: #202832;
+      font-size: 15px;
+      font-weight: 700;
+      letter-spacing: -0.025em;
+    }
+
+    .brand-copy > span {
+      display: -webkit-box;
+      overflow: hidden;
+      color: #7b8694;
+      font-size: 8.5px;
+      line-height: 1.45;
+      -webkit-box-orient: vertical;
+      -webkit-line-clamp: 2;
+    }
+
+    .brand-foot {
+      display: flex;
+      align-items: center;
+      gap: 7px;
+      min-width: 0;
+      margin-top: auto;
+      padding-top: 12px;
+    }
+
+    .brand-count-pill {
+      flex-shrink: 0;
+      padding: 4px 6px;
+      border: 1px solid #f0d2c7;
+      border-radius: 3px;
+      background: #fff5f1;
+      color: #bd4a29;
+      font-size: 6.5px;
+      font-weight: 800;
+      letter-spacing: 0.035em;
+      text-transform: uppercase;
+    }
+
+    .brand-featured {
+      overflow: hidden;
+      color: #9aa4b1;
+      font-size: 7px;
+      font-weight: 600;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .brand-featured--muted {
+      color: #b0b9c4;
+      font-style: italic;
+    }
+
+    .brand-arrow {
+      margin-left: auto;
+      color: #bdc5cf;
+      font-size: 10px;
+      transition: color 140ms, transform 140ms;
+    }
+
+    .brand-card:hover .brand-arrow {
+      color: var(--brand-glow);
+      transform: translate(1px, -1px);
+    }
+
+    .brand-art {
+      position: absolute;
+      right: 14px;
+      bottom: 46px;
+      z-index: 0;
+      opacity: 0.9;
+      filter: drop-shadow(0 8px 10px rgba(20, 26, 34, 0.16));
+      transform: rotate(5deg);
+      transition: transform 180ms ease;
+    }
+
+    .brand-card:hover .brand-art {
+      transform: rotate(2deg) translateY(-3px);
+    }
+
+    .brand-empty {
+      margin: 14px 0;
+      padding: 38px;
+      border: 1px dashed #cbd2dc;
+      border-radius: 8px;
+      background: #ffffff;
+      color: #8a94a2;
+      font-size: 10px;
+      text-align: center;
+    }
+
+    .brand-empty.hidden {
+      display: none;
+    }
+
+    .brand-cta {
+      position: relative;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 22px;
+      overflow: hidden;
+      min-height: 138px;
+      margin-top: 14px;
+      padding: 23px 26px;
+      border-radius: 9px;
+      background:
+        radial-gradient(circle at 90% 0%, rgba(255, 122, 80, 0.3) 0%, transparent 36%),
+        linear-gradient(140deg, #29313c 0%, #151a21 100%);
+      color: #ffffff;
+      box-shadow: 0 18px 40px rgba(20, 26, 34, 0.13);
+      isolation: isolate;
+    }
+
+    .brand-cta > div {
+      position: relative;
+      z-index: 2;
+      max-width: 560px;
+    }
+
+    .cta-eyebrow {
+      display: block;
+      margin-bottom: 6px;
+      color: #ffad90;
+      font-size: 8px;
+      font-weight: 800;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+    }
+
+    .brand-cta h2 {
+      margin: 0 0 5px;
+      color: #ffffff;
+      font-size: 22px;
+      font-weight: 700;
+      letter-spacing: -0.035em;
+      line-height: 1.1;
+    }
+
+    .brand-cta p {
+      margin: 0;
+      color: #aab4c2;
+      font-size: 9.5px;
+      line-height: 1.5;
+    }
+
+    .brand-cta > a {
+      position: relative;
+      z-index: 2;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      flex-shrink: 0;
+      padding: 9px 12px;
+      border-radius: 3px;
+      background: linear-gradient(180deg, #f7623a, #d9441f);
+      color: #ffffff;
+      font-size: 8.5px;
+      font-weight: 800;
+      letter-spacing: 0.04em;
+      text-decoration: none;
+      text-transform: uppercase;
+      box-shadow: 0 4px 12px rgba(217, 68, 31, 0.22);
+    }
+
+    .brand-cta > a:hover {
+      filter: brightness(1.07);
+      text-decoration: none;
+    }
+
+    .cta-ghost {
+      position: absolute;
+      z-index: 1;
+      right: 190px;
+      bottom: -28px;
+      color: rgba(255, 255, 255, 0.035);
+      font-size: 110px;
+      font-weight: 800;
+      letter-spacing: -0.08em;
+      line-height: 1;
+      pointer-events: none;
+    }
+
+    .catalog-notice {
+      margin: 16px 0 0;
+      color: #9aa4b1;
+      font-size: 8px;
+      text-align: center;
+    }
+
+    .sr-only {
+      position: absolute;
+      width: 1px;
+      height: 1px;
+      padding: 0;
+      margin: -1px;
+      overflow: hidden;
+      clip: rect(0, 0, 0, 0);
+      white-space: nowrap;
+      border: 0;
+    }
+
+    @media (max-width: 900px) {
+      .hero-mark {
+        width: 160px;
+        height: 160px;
+        margin-right: 0;
+      }
+
+      .mark-ring--one {
+        width: 150px;
+        height: 150px;
+      }
+
+      .mark-ring--two {
+        width: 100px;
+        height: 100px;
+      }
+
+      .brand-grid {
+        grid-template-columns: repeat(auto-fill, minmax(238px, 1fr));
+      }
+    }
+
+    @media (max-width: 700px) {
+      .brands-hero {
+        min-height: 210px;
+        padding: 24px 20px;
+      }
+
+      .hero-mark {
+        position: absolute;
+        right: -38px;
+        bottom: -38px;
+        width: 170px;
+        height: 170px;
+        opacity: 0.4;
+        transform: scale(0.85);
+        transform-origin: bottom right;
+      }
+
+      .hero-copy {
+        max-width: 100%;
+      }
+
+      .brand-toolbar {
+        flex-wrap: wrap;
+        padding: 10px;
+      }
+
+      .brand-search {
+        width: 100%;
+      }
+
+      .country-filter {
+        flex: 1;
+      }
+
+      .country-filter select {
+        flex: 1;
+        min-width: 0;
+      }
+
+      .brand-count {
+        margin-left: 0;
+      }
+
+      .brand-grid {
+        grid-template-columns: 1fr 1fr;
+      }
+
+      .brand-cta {
+        align-items: flex-start;
+        flex-direction: column;
+        gap: 12px;
+      }
+    }
+
+    @media (max-width: 560px) {
+      .brands-page {
+        padding: 12px 12px 0;
+      }
+
+      .brand-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .hero-stats {
+        gap: 12px;
+      }
+
+      .hero-stats span:last-child {
+        display: none;
+      }
+
+      .brand-copy {
+        max-width: 74%;
+      }
+
+      .brand-cta {
+        padding: 21px 18px;
+      }
+
+      .brand-cta h2 {
+        font-size: 20px;
+      }
+
+      .cta-ghost {
+        display: none;
+      }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      .brand-card,
+      .brand-art,
+      .brand-arrow {
+        transition: none;
+      }
+    }
+  </style>
 </BaseLayout>

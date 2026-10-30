@@ -1,28 +1,1160 @@
 ---
 import BaseLayout from '../../layouts/BaseLayout.astro';
+import StoryArt from '../../components/StoryArt.astro';
+import DeviceArt from '../../components/DeviceArt.astro';
 import { reviews } from '../../data/catalog';
+
+const [lead, ...rest] = reviews;
+const average = (reviews.reduce((total, review) => total + review.score, 0) / reviews.length).toFixed(1);
+const topThree = [...reviews].sort((a, b) => b.score - a.score).slice(0, 3);
+
+const reviewDevices: Record<string, { name: string; slug: string; manufacturer: string }> = {
+  'vivo-x500-pro-max-review': { name: 'Vivo X500 Pro Max', slug: 'vivo-x500-pro-max', manufacturer: 'vivo' },
+  'galaxy-tab-s10-ultra-review': { name: 'Galaxy Tab S10 Ultra', slug: 'galaxy-tab-s10-ultra', manufacturer: 'samsung' },
+  'samsung-galaxy-s25-ultra-review': { name: 'Samsung Galaxy S25 Ultra', slug: 'samsung-galaxy-s25-ultra', manufacturer: 'samsung' },
+  'google-pixel-9-pro-review': { name: 'Google Pixel 9 Pro', slug: 'google-pixel-9-pro', manufacturer: 'google' },
+  'oneplus-12-review': { name: 'OnePlus 12', slug: 'oneplus-12', manufacturer: 'oneplus' }
+};
+
+const verdictLabel = (score: number) => score >= 9.3 ? 'Outstanding' : score >= 9 ? 'Excellent' : score >= 8.5 ? 'Highly recommended' : 'Recommended';
+const deviceFor = (slug: string) => reviewDevices[slug];
 ---
 
-<BaseLayout title="Reviews | TechAtlas" description="Professional reviews, scorecards, and verdicts.">
-  <div class="page-shell">
-    <div class="breadcrumbs">Home / Reviews</div>
-    <div class="page-head">
-      <h1>Reviews and verdicts</h1>
-    </div>
-    <p class="catalog-notice">Sample editorial content: scores and opinions shown here are placeholders, not published test results.</p>
+<BaseLayout title="Reviews | TechAtlas" description="Independent phone reviews, scored verdicts, camera notes, battery results and buying advice.">
+  <div class="reviews-page">
+    <nav class="crumbs" aria-label="Breadcrumb">
+      <a href="/">Home</a><span aria-hidden="true">/</span><span>Reviews</span>
+    </nav>
 
-    <div class="grid-3">
-      {reviews.map((review) => (
-        <article class="review-card">
-          <div class="card-topline">
-            <span class="pill">{review.score}/10</span>
-            <span class="rating">★</span>
-          </div>
-          <h3><a href={`/reviews/${review.slug}`}>{review.title}</a></h3>
-          <p class="muted">{review.excerpt}</p>
-          <p>{review.author}</p>
+    <header class="reviews-head">
+      <div>
+        <span class="eyebrow">The review desk</span>
+        <h1>Tested. Weighed. <em>Verdict.</em></h1>
+        <p>Long-form reviews built around the details that change how a phone feels after the first week — not just the launch-day spec sheet.</p>
+      </div>
+      <div class="head-score">
+        <span>Average score</span>
+        <strong>{average}<small>/10</small></strong>
+        <div class="score-meter" aria-hidden="true"><i style={`width:${Number(average) * 10}%`}></i></div>
+        <span>{reviews.length} reviews this edition</span>
+      </div>
+    </header>
+
+    <section class="review-lead-grid" aria-label="Featured review">
+      <a class="lead-review" href={`/reviews/${lead.slug}`}>
+        <span class="lead-art">
+          <StoryArt title={lead.title} category="Review" variant="hero" device={deviceFor(lead.slug)} />
+        </span>
+        <span class="lead-shade" aria-hidden="true"></span>
+        <span class="lead-top">
+          <span class="lead-badge">Review of the week</span>
+          <span class="lead-date">{lead.publishedAt}</span>
+        </span>
+        <span class="lead-copy">
+          <span class="lead-kicker">The full verdict</span>
+          <strong>{lead.title}</strong>
+          <span class="lead-excerpt">{lead.excerpt}</span>
+          <span class="lead-footer">
+            <span>By {lead.author}</span>
+            <span>Read the review <span aria-hidden="true">→</span></span>
+          </span>
+        </span>
+        <span class="lead-score" style={`--score:${lead.score}`}>
+          <strong>{lead.score}</strong>
+          <small>/10</small>
+          <i>{verdictLabel(lead.score)}</i>
+        </span>
+      </a>
+
+      <div class="review-stack">
+        <div class="stack-head">
+          <h2>Latest verdicts</h2>
+          <span>{rest.length} new</span>
+        </div>
+        {rest.map((review) => {
+          const device = deviceFor(review.slug);
+          return (
+            <a class="stack-review" href={`/reviews/${review.slug}`}>
+              <span class="stack-thumb">
+                <StoryArt title={review.title} category="Review" variant="thumb" device={device} />
+              </span>
+              <span class="stack-copy">
+                <span class="stack-meta">{review.publishedAt}</span>
+                <strong>{review.title}</strong>
+                <small>By {review.author}</small>
+              </span>
+              <span class="stack-score" style={`--score:${review.score}`}>
+                <strong>{review.score}</strong>
+              </span>
+            </a>
+          );
+        })}
+      </div>
+    </section>
+
+    <section class="archive" aria-labelledby="archive-title">
+      <header class="archive-head">
+        <div>
+          <span class="eyebrow">The archive</span>
+          <h2 id="archive-title">All reviews</h2>
+        </div>
+        <div class="archive-note">
+          <span class="archive-dot" aria-hidden="true"></span>
+          Scores are sample editorial judgments
+        </div>
+      </header>
+
+      <div class="review-grid">
+        {reviews.map((review, index) => {
+          const device = deviceFor(review.slug);
+          return (
+            <a class:list={['review-card', { 'review-card--featured': index === 0 }]} href={`/reviews/${review.slug}`}>
+              <span class="review-art">
+                <StoryArt title={review.title} category="Review" variant="card" device={device} />
+                <span class="review-score-ring" style={`--score:${review.score}`}>
+                  <strong>{review.score}</strong>
+                  <small>/10</small>
+                </span>
+              </span>
+              <span class="review-copy">
+                <span class="review-meta">{verdictLabel(review.score)} · {review.publishedAt}</span>
+                <strong>{review.title}</strong>
+                <span class="review-excerpt">{review.excerpt}</span>
+                <span class="review-footer">
+                  <span>By {review.author}</span>
+                  <span class="review-link">Read verdict <span aria-hidden="true">→</span></span>
+                </span>
+              </span>
+            </a>
+          );
+        })}
+      </div>
+    </section>
+
+    <section class="leaderboard-section" aria-labelledby="leaderboard-title">
+      <div class="leaderboard-copy">
+        <span class="eyebrow">The podium</span>
+        <h2 id="leaderboard-title">Highest scores right now</h2>
+        <p>A quick look at the reviews that have earned the strongest verdicts in this sample edition.</p>
+        <a href="/reviews">How we score reviews <span aria-hidden="true">→</span></a>
+      </div>
+      <ol class="leaderboard">
+        {topThree.map((review, index) => (
+          <li>
+            <a href={`/reviews/${review.slug}`}>
+              <span class="leaderboard-rank">{String(index + 1).padStart(2, '0')}</span>
+              <span class="leaderboard-thumb">
+                {deviceFor(review.slug)
+                  ? <DeviceArt name={deviceFor(review.slug)!.name} slug={deviceFor(review.slug)!.slug} manufacturer={deviceFor(review.slug)!.manufacturer} size="xs" width={18} />
+                  : <span class="leaderboard-glyph">T</span>}
+              </span>
+              <span class="leaderboard-copy">
+                <strong>{review.title}</strong>
+                <small>{review.author}</small>
+              </span>
+              <span class="leaderboard-score">{review.score}</span>
+            </a>
+          </li>
+        ))}
+      </ol>
+    </section>
+
+    <section class="method-section" aria-labelledby="method-title">
+      <header class="method-head">
+        <span class="eyebrow">Behind the score</span>
+        <h2 id="method-title">How a TechAtlas review is built</h2>
+      </header>
+      <div class="method-grid">
+        <article>
+          <span class="method-number">01</span>
+          <h3>Live with it</h3>
+          <p>Every phone is used as a daily driver, not just benchmarked on a desk. Calls, cameras, charging and notifications all count.</p>
         </article>
-      ))}
-    </div>
+        <article>
+          <span class="method-number">02</span>
+          <h3>Compare the context</h3>
+          <p>A good phone is only good relative to its price. We weigh the package against the closest alternatives in the same bracket.</p>
+        </article>
+        <article>
+          <span class="method-number">03</span>
+          <h3>Keep the caveats</h3>
+          <p>Trade-offs stay in the verdict. A score is a summary, not a substitute for knowing what you personally need.</p>
+        </article>
+      </div>
+    </section>
+
+    <p class="catalog-notice">Sample editorial content: scores and opinions shown here are placeholders, not published test results.</p>
   </div>
 </BaseLayout>
+
+<style>
+  :global(body) {
+    background: #eef1f4;
+    font-family: 'Segoe UI', system-ui, -apple-system, BlinkMacSystemFont, Arial, sans-serif;
+  }
+
+  .reviews-page {
+    --ink: #1b212a;
+    --line: #dbe0e7;
+    --accent: #e9542d;
+    width: 100%;
+    max-width: 1240px;
+    margin: 0 auto;
+    padding: 16px 18px 0;
+    color: var(--ink);
+  }
+
+  .crumbs {
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    margin-bottom: 12px;
+    color: #8a94a2;
+    font-size: 9px;
+    font-weight: 600;
+  }
+
+  .crumbs a {
+    color: #586575;
+    text-decoration: none;
+  }
+
+  .crumbs a:hover {
+    color: var(--accent);
+  }
+
+  .reviews-head {
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+    gap: 24px;
+    padding: 5px 2px 20px;
+  }
+
+  .eyebrow {
+    display: block;
+    margin-bottom: 7px;
+    color: var(--accent);
+    font-size: 8px;
+    font-weight: 800;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+  }
+
+  .reviews-head h1 {
+    margin: 0 0 6px;
+    color: #161d26;
+    font-size: clamp(33px, 4.5vw, 50px);
+    font-weight: 700;
+    letter-spacing: -0.055em;
+    line-height: 0.98;
+  }
+
+  .reviews-head h1 em {
+    color: #d9441f;
+    font-style: normal;
+  }
+
+  .reviews-head p {
+    max-width: 56ch;
+    margin: 0;
+    color: #6e7887;
+    font-size: 11px;
+    line-height: 1.55;
+  }
+
+  .head-score {
+    display: grid;
+    justify-items: end;
+    flex-shrink: 0;
+    width: 178px;
+    padding-bottom: 2px;
+  }
+
+  .head-score > span:first-child {
+    color: #98a2ae;
+    font-size: 7.5px;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+  }
+
+  .head-score strong {
+    color: #1f2731;
+    font-size: 32px;
+    font-weight: 800;
+    letter-spacing: -0.06em;
+    line-height: 1;
+  }
+
+  .head-score strong small {
+    color: #98a2ae;
+    font-size: 11px;
+    font-weight: 700;
+  }
+
+  .score-meter {
+    width: 100%;
+    height: 4px;
+    margin: 5px 0;
+    overflow: hidden;
+    border-radius: 999px;
+    background: #dfe4ea;
+  }
+
+  .score-meter i {
+    display: block;
+    height: 100%;
+    border-radius: inherit;
+    background: linear-gradient(90deg, #f8a88d, #e9542d);
+  }
+
+  .head-score > span:last-child {
+    color: #98a2ae;
+    font-size: 7.5px;
+    font-weight: 600;
+  }
+
+  .review-lead-grid {
+    display: grid;
+    grid-template-columns: minmax(0, 1.55fr) minmax(280px, 0.9fr);
+    gap: 12px;
+    margin-bottom: 18px;
+    align-items: stretch;
+  }
+
+  .lead-review {
+    position: relative;
+    display: block;
+    overflow: hidden;
+    min-height: 438px;
+    border-radius: 10px;
+    background: #151a21;
+    color: #ffffff;
+    text-decoration: none;
+    isolation: isolate;
+    box-shadow: 0 18px 42px rgba(20, 26, 34, 0.14);
+  }
+
+  .lead-review:hover {
+    text-decoration: none;
+  }
+
+  .lead-art {
+    position: absolute;
+    inset: 0;
+  }
+
+  .lead-art :global(.story-art) {
+    height: 100%;
+    min-height: 100%;
+  }
+
+  .lead-art :global(.story-badge) {
+    display: none;
+  }
+
+  .lead-shade {
+    position: absolute;
+    inset: 0;
+    background:
+      linear-gradient(0deg, rgba(4, 7, 12, 0.87) 0%, rgba(4, 7, 12, 0.1) 68%),
+      linear-gradient(90deg, rgba(4, 7, 12, 0.3) 0%, transparent 58%);
+  }
+
+  .lead-top {
+    position: absolute;
+    top: 15px;
+    right: 15px;
+    left: 15px;
+    z-index: 3;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+  }
+
+  .lead-badge {
+    padding: 5px 8px;
+    border: 1px solid rgba(255, 255, 255, 0.22);
+    border-radius: 3px;
+    background: rgba(5, 9, 15, 0.46);
+    color: #ffffff;
+    font-size: 8px;
+    font-weight: 800;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    backdrop-filter: blur(8px);
+  }
+
+  .lead-date {
+    color: rgba(255, 255, 255, 0.62);
+    font-size: 8px;
+    font-weight: 600;
+  }
+
+  .lead-copy {
+    position: absolute;
+    right: 26px;
+    bottom: 22px;
+    left: 26px;
+    z-index: 2;
+    display: grid;
+    gap: 8px;
+    max-width: 520px;
+  }
+
+  .lead-kicker {
+    color: #ffad90;
+    font-size: 8px;
+    font-weight: 800;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+  }
+
+  .lead-copy > strong {
+    max-width: 17ch;
+    color: #ffffff;
+    font-size: clamp(27px, 3.6vw, 40px);
+    font-weight: 700;
+    letter-spacing: -0.045em;
+    line-height: 1.03;
+    text-shadow: 0 2px 18px rgba(0, 0, 0, 0.32);
+  }
+
+  .lead-excerpt {
+    max-width: 50ch;
+    color: rgba(255, 255, 255, 0.76);
+    font-size: 10px;
+    line-height: 1.55;
+  }
+
+  .lead-footer {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    margin-top: 4px;
+    color: rgba(255, 255, 255, 0.52);
+    font-size: 8px;
+  }
+
+  .lead-footer > span:first-child {
+    color: rgba(255, 255, 255, 0.74);
+    font-weight: 600;
+  }
+
+  .lead-footer > span:last-child {
+    color: #ffb499;
+    font-weight: 800;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+  }
+
+  .lead-score {
+    position: absolute;
+    top: 54px;
+    right: 18px;
+    z-index: 3;
+    display: grid;
+    width: 64px;
+    height: 64px;
+    place-content: center;
+    justify-items: center;
+    border-radius: 50%;
+    background:
+      conic-gradient(#ff7a50 calc(var(--score) * 10%), rgba(255, 255, 255, 0.15) 0),
+      rgba(7, 11, 17, 0.55);
+    box-shadow: 0 8px 22px rgba(0, 0, 0, 0.26), 0 0 0 1px rgba(255, 255, 255, 0.14);
+    backdrop-filter: blur(8px);
+  }
+
+  .lead-score::before {
+    position: absolute;
+    inset: 5px;
+    border-radius: 50%;
+    background: rgba(7, 11, 17, 0.82);
+    content: '';
+  }
+
+  .lead-score strong,
+  .lead-score small,
+  .lead-score i {
+    position: relative;
+    z-index: 1;
+    line-height: 1;
+  }
+
+  .lead-score strong {
+    color: #ffffff;
+    font-size: 21px;
+    font-weight: 800;
+    letter-spacing: -0.04em;
+  }
+
+  .lead-score small {
+    margin-top: 1px;
+    color: #ffad90;
+    font-size: 7px;
+    font-weight: 700;
+  }
+
+  .lead-score i {
+    margin-top: 4px;
+    color: rgba(255, 255, 255, 0.56);
+    font-size: 5px;
+    font-style: normal;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+  }
+
+  .review-stack {
+    overflow: hidden;
+    border: 1px solid var(--line);
+    border-radius: 9px;
+    background: #ffffff;
+    box-shadow: 0 1px 2px rgba(23, 32, 44, 0.035), 0 10px 24px rgba(23, 32, 44, 0.025);
+  }
+
+  .stack-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    min-height: 37px;
+    padding: 0 12px;
+    border-bottom: 1px solid #343b45;
+    background: linear-gradient(180deg, #3b434f 0%, #2d343e 100%);
+    color: #ffffff;
+  }
+
+  .stack-head h2 {
+    position: relative;
+    margin: 0;
+    padding-left: 9px;
+    font-size: 10px;
+    font-weight: 800;
+    letter-spacing: 0.075em;
+    text-transform: uppercase;
+  }
+
+  .stack-head h2::before {
+    position: absolute;
+    top: 50%;
+    left: 0;
+    width: 3px;
+    height: 12px;
+    border-radius: 999px;
+    background: #ff7a50;
+    content: '';
+    transform: translateY(-50%);
+  }
+
+  .stack-head > span {
+    color: #aeb9c8;
+    font-size: 8px;
+    font-weight: 600;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+  }
+
+  .stack-review {
+    display: grid;
+    grid-template-columns: 74px minmax(0, 1fr) 33px;
+    align-items: center;
+    gap: 10px;
+    min-height: 80px;
+    padding: 9px 11px;
+    border-bottom: 1px solid #edf0f3;
+    color: inherit;
+    text-decoration: none;
+    transition: background 140ms;
+  }
+
+  .stack-review:last-child {
+    border-bottom: 0;
+  }
+
+  .stack-review:hover {
+    background: #f8f9fb;
+    text-decoration: none;
+  }
+
+  .stack-thumb {
+    position: relative;
+    width: 74px;
+    height: 58px;
+    overflow: hidden;
+    border-radius: 5px;
+    background: #1a2028;
+  }
+
+  .stack-thumb :global(.story-art) {
+    height: 100%;
+    min-height: 100%;
+  }
+
+  .stack-thumb :global(.story-badge) {
+    display: none;
+  }
+
+  .stack-thumb :global(.story-device) {
+    right: 7%;
+    bottom: -18%;
+    transform: scale(0.72);
+    transform-origin: bottom center;
+  }
+
+  .stack-copy {
+    display: grid;
+    gap: 2px;
+    min-width: 0;
+  }
+
+  .stack-meta {
+    color: #d9441f;
+    font-size: 6.5px;
+    font-weight: 800;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+  }
+
+  .stack-copy strong {
+    display: -webkit-box;
+    overflow: hidden;
+    color: #2a333e;
+    font-size: 10px;
+    font-weight: 700;
+    line-height: 1.3;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
+  }
+
+  .stack-review:hover .stack-copy strong {
+    color: #c63c1b;
+  }
+
+  .stack-copy small {
+    color: #9aa4b1;
+    font-size: 7px;
+  }
+
+  .stack-score {
+    display: grid;
+    width: 31px;
+    height: 31px;
+    place-items: center;
+    border-radius: 50%;
+    background: conic-gradient(var(--accent) calc(var(--score) * 10%), #e7ebf0 0);
+    box-shadow: 0 1px 3px rgba(20, 28, 38, 0.1);
+  }
+
+  .stack-score strong {
+    display: grid;
+    width: 24px;
+    height: 24px;
+    place-items: center;
+    border-radius: 50%;
+    background: #ffffff;
+    color: #2a333e;
+    font-size: 9px;
+    font-weight: 800;
+  }
+
+  .archive {
+    overflow: hidden;
+    border: 1px solid var(--line);
+    border-radius: 9px;
+    background: #ffffff;
+    box-shadow: 0 1px 2px rgba(23, 32, 44, 0.035), 0 10px 24px rgba(23, 32, 44, 0.025);
+  }
+
+  .archive-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    padding: 16px 16px 14px;
+    border-bottom: 1px solid #edf0f3;
+  }
+
+  .archive-head .eyebrow {
+    margin-bottom: 4px;
+  }
+
+  .archive-head h2 {
+    margin: 0;
+    color: #1d2530;
+    font-size: 21px;
+    font-weight: 700;
+    letter-spacing: -0.04em;
+    line-height: 1;
+  }
+
+  .archive-note {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    color: #98a2ae;
+    font-size: 8px;
+    font-weight: 600;
+  }
+
+  .archive-dot {
+    width: 5px;
+    height: 5px;
+    border-radius: 50%;
+    background: #e9542d;
+    box-shadow: 0 0 0 3px rgba(233, 84, 45, 0.13);
+  }
+
+  .review-grid {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 12px;
+    padding: 12px;
+  }
+
+  .review-card {
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    min-width: 0;
+    border: 1px solid #e4e8ed;
+    border-radius: 7px;
+    background: #ffffff;
+    color: inherit;
+    text-decoration: none;
+    transition: border-color 150ms, box-shadow 150ms, transform 150ms;
+  }
+
+  .review-card:hover {
+    border-color: #c8d0da;
+    box-shadow: 0 14px 30px rgba(23, 32, 44, 0.08);
+    text-decoration: none;
+    transform: translateY(-2px);
+  }
+
+  .review-art {
+    position: relative;
+    display: block;
+    overflow: hidden;
+    aspect-ratio: 16 / 9;
+    background: #202731;
+  }
+
+  .review-art :global(.story-art) {
+    height: 100%;
+    min-height: 100%;
+  }
+
+  .review-art :global(.story-badge) {
+    display: none;
+  }
+
+  .review-score-ring {
+    position: absolute;
+    right: 9px;
+    bottom: 9px;
+    z-index: 2;
+    display: grid;
+    width: 38px;
+    height: 38px;
+    place-content: center;
+    justify-items: center;
+    border-radius: 50%;
+    background:
+      conic-gradient(#ff9b64 calc(var(--score) * 10%), rgba(255, 255, 255, 0.2) 0),
+      rgba(7, 11, 17, 0.58);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.24);
+    backdrop-filter: blur(6px);
+  }
+
+  .review-score-ring::before {
+    position: absolute;
+    inset: 3px;
+    border-radius: 50%;
+    background: rgba(7, 11, 17, 0.84);
+    content: '';
+  }
+
+  .review-score-ring strong,
+  .review-score-ring small {
+    position: relative;
+    z-index: 1;
+    line-height: 1;
+  }
+
+  .review-score-ring strong {
+    color: #ffffff;
+    font-size: 12px;
+    font-weight: 800;
+  }
+
+  .review-score-ring small {
+    color: #ffad90;
+    font-size: 5px;
+    font-weight: 700;
+  }
+
+  .review-copy {
+    display: flex;
+    flex: 1;
+    flex-direction: column;
+    gap: 4px;
+    padding: 11px 12px 12px;
+  }
+
+  .review-meta {
+    color: #d9441f;
+    font-size: 7px;
+    font-weight: 800;
+    letter-spacing: 0.055em;
+    text-transform: uppercase;
+  }
+
+  .review-copy > strong {
+    display: -webkit-box;
+    overflow: hidden;
+    color: #232b35;
+    font-size: 12px;
+    font-weight: 700;
+    line-height: 1.3;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
+  }
+
+  .review-card:hover .review-copy > strong {
+    color: #c63c1b;
+  }
+
+  .review-excerpt {
+    display: -webkit-box;
+    overflow: hidden;
+    color: #7b8694;
+    font-size: 8.5px;
+    line-height: 1.45;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 3;
+  }
+
+  .review-footer {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    margin-top: auto;
+    padding-top: 9px;
+    border-top: 1px solid #f0f2f5;
+    color: #a0a9b5;
+    font-size: 7px;
+  }
+
+  .review-link {
+    color: #d9441f;
+    font-weight: 800;
+    letter-spacing: 0.03em;
+    text-transform: uppercase;
+  }
+
+  .leaderboard-section {
+    display: grid;
+    grid-template-columns: minmax(0, 0.85fr) minmax(0, 1.15fr);
+    gap: 24px;
+    align-items: center;
+    overflow: hidden;
+    margin-top: 14px;
+    padding: 24px 28px;
+    border-radius: 9px;
+    background:
+      radial-gradient(circle at 8% 0%, rgba(255, 122, 80, 0.22) 0%, transparent 34%),
+      linear-gradient(140deg, #29313c 0%, #151a21 100%);
+    color: #ffffff;
+    box-shadow: 0 18px 40px rgba(20, 26, 34, 0.13);
+  }
+
+  .leaderboard-copy .eyebrow {
+    color: #ffad90;
+  }
+
+  .leaderboard-copy h2 {
+    max-width: 16ch;
+    margin: 0 0 7px;
+    color: #ffffff;
+    font-size: 25px;
+    font-weight: 700;
+    letter-spacing: -0.035em;
+    line-height: 1.1;
+  }
+
+  .leaderboard-copy p {
+    max-width: 40ch;
+    margin: 0 0 12px;
+    color: #aab4c2;
+    font-size: 9.5px;
+    line-height: 1.5;
+  }
+
+  .leaderboard-copy a {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    color: #ffb499;
+    font-size: 8.5px;
+    font-weight: 800;
+    letter-spacing: 0.04em;
+    text-decoration: none;
+    text-transform: uppercase;
+  }
+
+  .leaderboard-copy a:hover {
+    color: #ffffff;
+  }
+
+  .leaderboard {
+    display: grid;
+    gap: 5px;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  .leaderboard a {
+    display: grid;
+    grid-template-columns: 25px 27px minmax(0, 1fr) auto;
+    align-items: center;
+    gap: 9px;
+    padding: 9px 12px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 5px;
+    background: rgba(255, 255, 255, 0.05);
+    color: #ffffff;
+    text-decoration: none;
+    transition: background 140ms, border-color 140ms;
+  }
+
+  .leaderboard a:hover {
+    border-color: rgba(255, 122, 80, 0.35);
+    background: rgba(255, 255, 255, 0.09);
+    text-decoration: none;
+  }
+
+  .leaderboard-rank {
+    color: #ffad90;
+    font-size: 10px;
+    font-weight: 800;
+  }
+
+  .leaderboard-thumb {
+    display: grid;
+    place-items: center;
+  }
+
+  .leaderboard-glyph {
+    display: grid;
+    width: 18px;
+    height: 18px;
+    place-items: center;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: 50%;
+    color: #ffad90;
+    font-size: 7px;
+    font-weight: 800;
+  }
+
+  .leaderboard-copy {
+    display: grid;
+    gap: 1px;
+    min-width: 0;
+  }
+
+  .leaderboard-copy strong {
+    overflow: hidden;
+    color: #edf2f8;
+    font-size: 9.5px;
+    font-weight: 700;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .leaderboard-copy small {
+    color: #8b97a8;
+    font-size: 7px;
+  }
+
+  .leaderboard-score {
+    color: #ffad90;
+    font-size: 14px;
+    font-weight: 800;
+    letter-spacing: -0.03em;
+  }
+
+  .method-section {
+    margin-top: 18px;
+  }
+
+  .method-head {
+    margin-bottom: 10px;
+    padding: 0 2px;
+  }
+
+  .method-head h2 {
+    margin: 0;
+    color: #1d2530;
+    font-size: 23px;
+    font-weight: 700;
+    letter-spacing: -0.04em;
+  }
+
+  .method-grid {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 10px;
+  }
+
+  .method-grid article {
+    padding: 16px;
+    border: 1px solid var(--line);
+    border-radius: 7px;
+    background: #ffffff;
+    box-shadow: 0 1px 2px rgba(23, 32, 44, 0.03);
+  }
+
+  .method-number {
+    display: grid;
+    width: 28px;
+    height: 28px;
+    margin-bottom: 9px;
+    place-items: center;
+    border-radius: 50%;
+    background: #fff1eb;
+    color: #d9441f;
+    font-size: 8px;
+    font-weight: 800;
+  }
+
+  .method-grid h3 {
+    margin: 0 0 4px;
+    color: #29323d;
+    font-size: 12px;
+    font-weight: 700;
+  }
+
+  .method-grid p {
+    margin: 0;
+    color: #7b8694;
+    font-size: 9px;
+    line-height: 1.55;
+  }
+
+  .catalog-notice {
+    margin: 16px 0 0;
+    color: #9aa4b1;
+    font-size: 8px;
+    text-align: center;
+  }
+
+  @media (max-width: 960px) {
+    .review-lead-grid {
+      grid-template-columns: minmax(0, 1.4fr) minmax(250px, 0.9fr);
+    }
+
+    .lead-review {
+      min-height: 410px;
+    }
+
+    .review-grid {
+      grid-template-columns: 1fr 1fr;
+    }
+
+    .leaderboard-section {
+      grid-template-columns: 1fr;
+      gap: 16px;
+    }
+  }
+
+  @media (max-width: 700px) {
+    .reviews-head {
+      align-items: flex-start;
+    }
+
+    .head-score {
+      display: none;
+    }
+
+    .review-lead-grid {
+      grid-template-columns: 1fr;
+    }
+
+    .lead-review {
+      min-height: 370px;
+    }
+
+    .method-grid {
+      grid-template-columns: 1fr;
+    }
+  }
+
+  @media (max-width: 560px) {
+    .reviews-page {
+      padding: 12px 12px 0;
+    }
+
+    .lead-review {
+      min-height: 355px;
+    }
+
+    .lead-copy {
+      right: 18px;
+      bottom: 17px;
+      left: 18px;
+    }
+
+    .lead-copy > strong {
+      font-size: 25px;
+    }
+
+    .lead-excerpt {
+      display: none;
+    }
+
+    .lead-score {
+      top: 48px;
+      right: 13px;
+      width: 53px;
+      height: 53px;
+    }
+
+    .lead-score strong {
+      font-size: 17px;
+    }
+
+    .lead-score i {
+      display: none;
+    }
+
+    .review-grid {
+      grid-template-columns: 1fr;
+    }
+
+    .archive-note {
+      display: none;
+    }
+
+    .leaderboard-section {
+      padding: 20px 16px;
+    }
+
+    .leaderboard-copy h2 {
+      font-size: 21px;
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .stack-review,
+    .review-card,
+    .leaderboard a {
+      transition: none;
+    }
+  }
+</style>

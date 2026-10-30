@@ -1,15 +1,724 @@
 ---
 import BaseLayout from '../layouts/BaseLayout.astro';
+import DeviceArt from '../components/DeviceArt.astro';
+
+const featured = { name: 'Samsung Galaxy S25 Ultra', slug: 'samsung-galaxy-s25-ultra', manufacturer: 'samsung' };
+const second = { name: 'Google Pixel 9 Pro', slug: 'google-pixel-9-pro', manufacturer: 'google' };
+
+const benefits = [
+  'Save phones to a personal shortlist',
+  'Get alerts when prices or verdicts change',
+  'Keep comparisons in sync across devices'
+];
 ---
 
-<BaseLayout title="Accounts | TechAtlas" description="Community account features are not enabled in this build.">
-  <div class="page-shell">
-    <div class="breadcrumbs">Home / Accounts</div>
-    <article class="panel" style="max-width: 700px; margin: 3rem auto;">
-      <span class="pill">In development</span>
-      <h1>Community accounts are not enabled yet</h1>
-      <p class="muted">Admin sign-in is available separately. User registration, favorites, and community reviews are not connected in this build.</p>
-      <a href="/admin" class="primary-button">Open admin sign-in</a>
-    </article>
+<BaseLayout title="Account | TechAtlas" description="TechAtlas accounts are in preview. Join the waitlist for saved phones, comparisons, and price alerts.">
+  <div class="account-page">
+    <nav class="crumbs" aria-label="Breadcrumb">
+      <a href="/">Home</a><span aria-hidden="true">/</span><span>Account</span>
+    </nav>
+
+    <div class="account-shell">
+      <section class="account-brand" aria-labelledby="account-brand-title">
+        <span class="brand-grid" aria-hidden="true"></span>
+        <span class="brand-glow" aria-hidden="true"></span>
+
+        <div class="brand-top">
+          <span class="brand-logo" aria-hidden="true">T</span>
+          <span class="brand-name">TechAtlas <i>/</i> Account</span>
+          <span class="brand-tag">Preview</span>
+        </div>
+
+        <div class="brand-copy">
+          <span class="eyebrow">One account, a sharper setup</span>
+          <h1 id="account-brand-title">Your phones. Your <em>shortlist.</em> Your atlas.</h1>
+          <p>A TechAtlas account will keep the phones you care about in one place — from the first rumor to the final verdict.</p>
+
+          <ul class="benefit-list">
+            {benefits.map((benefit) => (
+              <li>
+                <span class="benefit-check" aria-hidden="true">
+                  <svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="m4 12 5 5L20 6"></path></svg>
+                </span>
+                {benefit}
+              </li>
+            ))}
+          </ul>
+        </div>
+
+        <div class="brand-visual" aria-hidden="true">
+          <span class="visual-ring visual-ring--one"></span>
+          <span class="visual-ring visual-ring--two"></span>
+          <span class="visual-device visual-device--back">
+            <DeviceArt name={second.name} slug={second.slug} manufacturer={second.manufacturer} size="md" width={82} />
+          </span>
+          <span class="visual-device visual-device--front">
+            <DeviceArt name={featured.name} slug={featured.slug} manufacturer={featured.manufacturer} size="lg" width={118} />
+          </span>
+        </div>
+
+        <span class="brand-foot">TECHATLAS / MEMBER PREVIEW · 2026</span>
+      </section>
+
+      <section class="account-panel" aria-labelledby="account-panel-title">
+        <span class="status-pill"><i aria-hidden="true"></i> Preview build</span>
+        <h2 id="account-panel-title">Accounts are on the roadmap.</h2>
+        <p class="panel-intro">
+          Sign-in, saved favorites, and member reviews are not connected in this frontend preview. Leave an email to signal interest — then explore the catalog as a guest.
+        </p>
+
+        <form id="waitlist-form" class="waitlist-form" novalidate>
+          <label class="sr-only" for="waitlist-email">Email address</label>
+          <div class="field-row">
+            <input id="waitlist-email" type="email" name="email" placeholder="you@example.com" autocomplete="email" required />
+            <button type="submit">Join the list</button>
+          </div>
+          <p class="form-status" role="status" aria-live="polite" data-waitlist-status></p>
+        </form>
+
+        <div class="panel-divider"><span>Already an editor?</span></div>
+
+        <a class="admin-link" href="/admin">
+          <span class="admin-icon" aria-hidden="true">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="10" width="16" height="11" rx="2"></rect><path d="M8 10V7a4 4 0 0 1 8 0v3"></path></svg>
+          </span>
+          <span class="admin-copy">
+            <strong>Admin console</strong>
+            <small>Catalog, branding and publishing tools</small>
+          </span>
+          <span class="admin-arrow" aria-hidden="true">→</span>
+        </a>
+
+        <nav class="guest-links" aria-label="Explore TechAtlas">
+          <a href="/phones">Browse phones</a>
+          <span aria-hidden="true">·</span>
+          <a href="/reviews">Read reviews</a>
+          <span aria-hidden="true">·</span>
+          <a href="/compare">Compare specs</a>
+        </nav>
+
+        <p class="fine-print">No account, email, or personal data is stored by this preview.</p>
+      </section>
+    </div>
   </div>
+
+  <script>
+    const form = document.querySelector<HTMLFormElement>('#waitlist-form');
+    const status = document.querySelector<HTMLElement>('[data-waitlist-status]');
+
+    form?.addEventListener('submit', (event) => {
+      event.preventDefault();
+      const email = form.querySelector<HTMLInputElement>('input[type="email"]');
+      if (!status) return;
+      if (!email?.value || !email.checkValidity()) {
+        status.textContent = 'Enter a valid email address to join the preview list.';
+        status.classList.add('is-error');
+        return;
+      }
+      status.classList.remove('is-error');
+      status.textContent = 'You are on the preview list — no email was stored.';
+      form.reset();
+    });
+  </script>
+
+  <style>
+    :global(body) {
+      background: #eef1f4;
+      font-family: 'Segoe UI', system-ui, -apple-system, BlinkMacSystemFont, Arial, sans-serif;
+    }
+
+    .account-page {
+      --ink: #1b212a;
+      --line: #dbe0e7;
+      --accent: #e9542d;
+      width: 100%;
+      max-width: 1120px;
+      margin: 0 auto;
+      padding: 16px 18px 40px;
+      color: var(--ink);
+    }
+
+    .crumbs {
+      display: flex;
+      align-items: center;
+      gap: 7px;
+      margin-bottom: 14px;
+      color: #8a94a2;
+      font-size: 9px;
+      font-weight: 600;
+    }
+
+    .crumbs a {
+      color: #586575;
+      text-decoration: none;
+    }
+
+    .crumbs a:hover {
+      color: var(--accent);
+    }
+
+    .account-shell {
+      display: grid;
+      grid-template-columns: minmax(0, 1.06fr) minmax(0, 0.94fr);
+      overflow: hidden;
+      border: 1px solid var(--line);
+      border-radius: 11px;
+      background: #ffffff;
+      box-shadow: 0 22px 50px rgba(20, 26, 34, 0.12);
+    }
+
+    .account-brand {
+      position: relative;
+      display: flex;
+      flex-direction: column;
+      gap: 24px;
+      overflow: hidden;
+      min-height: 560px;
+      padding: 28px 30px 20px;
+      background:
+        radial-gradient(circle at 84% 8%, rgba(255, 122, 80, 0.3) 0%, transparent 36%),
+        radial-gradient(circle at 6% 100%, rgba(38, 91, 140, 0.28) 0%, transparent 40%),
+        linear-gradient(140deg, #171c23 0%, #232b35 58%, #2c211d 100%);
+      color: #ffffff;
+      isolation: isolate;
+    }
+
+    .brand-grid {
+      position: absolute;
+      z-index: -1;
+      inset: 0;
+      background-image:
+        linear-gradient(rgba(255, 255, 255, 0.045) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255, 255, 255, 0.04) 1px, transparent 1px);
+      background-size: 44px 44px;
+      mask-image: linear-gradient(120deg, rgba(0, 0, 0, 0.9), transparent 82%);
+    }
+
+    .brand-glow {
+      position: absolute;
+      z-index: -1;
+      top: 18%;
+      right: 10%;
+      width: 240px;
+      height: 240px;
+      border-radius: 50%;
+      background: rgba(233, 84, 45, 0.2);
+      filter: blur(46px);
+    }
+
+    .brand-top {
+      position: relative;
+      z-index: 3;
+      display: flex;
+      align-items: center;
+      gap: 9px;
+    }
+
+    .brand-logo {
+      display: grid;
+      width: 29px;
+      height: 29px;
+      place-items: center;
+      border-radius: 7px;
+      background: linear-gradient(145deg, #ff7a50 0%, #d9441f 100%);
+      color: #ffffff;
+      font-size: 13px;
+      font-weight: 800;
+      box-shadow: 0 6px 14px rgba(217, 68, 31, 0.3), 0 1px 0 rgba(255, 255, 255, 0.28) inset;
+      transform: rotate(-4deg);
+    }
+
+    .brand-name {
+      color: #e6edf6;
+      font-size: 9px;
+      font-weight: 800;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+    }
+
+    .brand-name i {
+      margin: 0 2px;
+      color: #ff9b7b;
+      font-style: normal;
+    }
+
+    .brand-tag {
+      margin-left: auto;
+      padding: 4px 7px;
+      border: 1px solid rgba(255, 255, 255, 0.18);
+      border-radius: 3px;
+      background: rgba(7, 11, 17, 0.35);
+      color: #aab4c2;
+      font-size: 6.5px;
+      font-weight: 800;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      backdrop-filter: blur(6px);
+    }
+
+    .brand-copy {
+      position: relative;
+      z-index: 3;
+      max-width: 470px;
+    }
+
+    .eyebrow {
+      display: block;
+      margin-bottom: 8px;
+      color: #ffad90;
+      font-size: 8px;
+      font-weight: 800;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+    }
+
+    .brand-copy h1 {
+      max-width: 16ch;
+      margin: 0 0 10px;
+      color: #ffffff;
+      font-size: clamp(30px, 3.8vw, 44px);
+      font-weight: 700;
+      letter-spacing: -0.055em;
+      line-height: 1;
+    }
+
+    .brand-copy h1 em {
+      color: #ff9b7b;
+      font-style: normal;
+    }
+
+    .brand-copy > p {
+      max-width: 46ch;
+      margin: 0;
+      color: #b2bcc9;
+      font-size: 10.5px;
+      line-height: 1.6;
+    }
+
+    .benefit-list {
+      display: grid;
+      gap: 9px;
+      margin: 20px 0 0;
+      padding: 0;
+      list-style: none;
+    }
+
+    .benefit-list li {
+      display: flex;
+      align-items: center;
+      gap: 9px;
+      color: #c8d2df;
+      font-size: 9.5px;
+      font-weight: 600;
+    }
+
+    .benefit-check {
+      display: grid;
+      width: 17px;
+      height: 17px;
+      flex-shrink: 0;
+      place-items: center;
+      border: 1px solid rgba(255, 122, 80, 0.36);
+      border-radius: 50%;
+      background: rgba(255, 122, 80, 0.13);
+      color: #ffad90;
+    }
+
+    .brand-visual {
+      position: absolute;
+      right: -18px;
+      bottom: 4px;
+      z-index: 1;
+      width: 270px;
+      height: 300px;
+      pointer-events: none;
+    }
+
+    .visual-device {
+      position: absolute;
+      display: block;
+      filter: drop-shadow(0 18px 26px rgba(0, 0, 0, 0.36));
+    }
+
+    .visual-device--front {
+      right: 34px;
+      bottom: 12px;
+      z-index: 2;
+      transform: rotate(-4deg);
+    }
+
+    .visual-device--back {
+      right: 0;
+      bottom: 34px;
+      opacity: 0.42;
+      transform: rotate(9deg) scale(0.92);
+    }
+
+    .visual-ring {
+      position: absolute;
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      border-radius: 50%;
+    }
+
+    .visual-ring--one {
+      right: 8px;
+      bottom: 22px;
+      width: 250px;
+      height: 250px;
+      box-shadow: 0 0 0 28px rgba(255, 255, 255, 0.022);
+    }
+
+    .visual-ring--two {
+      right: 58px;
+      bottom: 70px;
+      width: 160px;
+      height: 160px;
+      border-color: rgba(255, 122, 80, 0.18);
+    }
+
+    .brand-foot {
+      position: relative;
+      z-index: 3;
+      margin-top: auto;
+      padding-top: 14px;
+      border-top: 1px solid rgba(255, 255, 255, 0.09);
+      color: rgba(255, 255, 255, 0.3);
+      font-size: 6.5px;
+      font-weight: 800;
+      letter-spacing: 0.16em;
+    }
+
+    .account-panel {
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      padding: 34px 32px;
+    }
+
+    .status-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      align-self: flex-start;
+      margin-bottom: 12px;
+      padding: 4px 7px;
+      border: 1px solid #f0c1b3;
+      border-radius: 3px;
+      background: #fff3ee;
+      color: #c04928;
+      font-size: 7px;
+      font-weight: 800;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+    }
+
+    .status-pill i {
+      width: 5px;
+      height: 5px;
+      border-radius: 50%;
+      background: #e9542d;
+      box-shadow: 0 0 0 3px rgba(233, 84, 45, 0.13);
+    }
+
+    .account-panel h2 {
+      max-width: 19ch;
+      margin: 0 0 8px;
+      color: #161d26;
+      font-size: 27px;
+      font-weight: 700;
+      letter-spacing: -0.045em;
+      line-height: 1.06;
+    }
+
+    .panel-intro {
+      max-width: 46ch;
+      margin: 0 0 18px;
+      color: #6e7887;
+      font-size: 10.5px;
+      line-height: 1.6;
+    }
+
+    .waitlist-form {
+      display: grid;
+      gap: 5px;
+    }
+
+    .field-row {
+      display: flex;
+      align-items: stretch;
+      gap: 5px;
+    }
+
+    .field-row input {
+      flex: 1;
+      min-width: 0;
+      height: 38px;
+      padding: 0 10px;
+      border: 1px solid #cbd2dc;
+      border-radius: 4px;
+      outline: 0;
+      background: #ffffff;
+      color: #2d3540;
+      font-size: 10.5px;
+      font-weight: 500;
+      transition: border-color 140ms, box-shadow 140ms;
+    }
+
+    .field-row input::placeholder {
+      color: #a2abb7;
+    }
+
+    .field-row input:focus {
+      border-color: #909aa8;
+      box-shadow: 0 0 0 3px rgba(233, 84, 45, 0.1);
+    }
+
+    .field-row button {
+      height: 38px;
+      padding: 0 13px;
+      border: 1px solid #c43d1c;
+      border-radius: 4px;
+      background: linear-gradient(180deg, #f7623a 0%, #d9441f 100%);
+      color: #ffffff;
+      font-size: 8px;
+      font-weight: 800;
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+      white-space: nowrap;
+      cursor: pointer;
+      box-shadow: 0 3px 9px rgba(217, 68, 31, 0.2);
+      transition: filter 140ms;
+    }
+
+    .field-row button:hover {
+      filter: brightness(1.07);
+    }
+
+    .form-status {
+      min-height: 14px;
+      margin: 0;
+      color: #2d8a5b;
+      font-size: 8px;
+      font-weight: 600;
+    }
+
+    .form-status.is-error {
+      color: #b42318;
+    }
+
+    .panel-divider {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin: 20px 0 12px;
+      color: #a0a9b5;
+      font-size: 7px;
+      font-weight: 700;
+      letter-spacing: 0.07em;
+      text-transform: uppercase;
+    }
+
+    .panel-divider::before,
+    .panel-divider::after {
+      height: 1px;
+      flex: 1;
+      background: #edf0f3;
+      content: '';
+    }
+
+    .admin-link {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 11px 12px;
+      border: 1px solid #e4e8ed;
+      border-radius: 5px;
+      background: #fafbfc;
+      color: inherit;
+      text-decoration: none;
+      transition: border-color 140ms, background 140ms;
+    }
+
+    .admin-link:hover {
+      border-color: #f0b7a5;
+      background: #fff8f5;
+      text-decoration: none;
+    }
+
+    .admin-icon {
+      display: grid;
+      width: 29px;
+      height: 29px;
+      flex-shrink: 0;
+      place-items: center;
+      border-radius: 5px;
+      background: #fff1eb;
+      color: #d9441f;
+    }
+
+    .admin-copy {
+      display: grid;
+      gap: 1px;
+      min-width: 0;
+    }
+
+    .admin-copy strong {
+      color: #343e4a;
+      font-size: 10px;
+      font-weight: 700;
+    }
+
+    .admin-copy small {
+      color: #98a2ae;
+      font-size: 8px;
+    }
+
+    .admin-arrow {
+      margin-left: auto;
+      color: #c04928;
+      font-size: 12px;
+      transition: transform 140ms;
+    }
+
+    .admin-link:hover .admin-arrow {
+      transform: translateX(2px);
+    }
+
+    .guest-links {
+      display: flex;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 7px;
+      margin-top: 18px;
+      color: #596575;
+      font-size: 8.5px;
+      font-weight: 700;
+    }
+
+    .guest-links a {
+      text-decoration: none;
+    }
+
+    .guest-links a:hover {
+      color: var(--accent);
+    }
+
+    .guest-links span {
+      color: #c3cad3;
+    }
+
+    .fine-print {
+      margin: 18px 0 0;
+      padding-top: 12px;
+      border-top: 1px solid #edf0f3;
+      color: #a0a9b5;
+      font-size: 7.5px;
+      line-height: 1.5;
+    }
+
+    @media (max-width: 960px) {
+      .account-shell {
+        grid-template-columns: minmax(0, 1fr) minmax(0, 0.9fr);
+      }
+
+      .account-brand {
+        padding: 24px 24px 18px;
+      }
+
+      .brand-visual {
+        right: -64px;
+        opacity: 0.55;
+        transform: scale(0.86);
+        transform-origin: bottom right;
+      }
+
+      .account-panel {
+        padding: 28px 24px;
+      }
+
+      .account-panel h2 {
+        font-size: 24px;
+      }
+    }
+
+    @media (max-width: 760px) {
+      .account-shell {
+        grid-template-columns: 1fr;
+      }
+
+      .account-brand {
+        min-height: 370px;
+      }
+
+      .brand-copy h1 {
+        max-width: 17ch;
+      }
+
+      .brand-visual {
+        right: -30px;
+        bottom: -26px;
+        width: 230px;
+        height: 260px;
+        opacity: 0.45;
+        transform: scale(0.72);
+        transform-origin: bottom right;
+      }
+
+      .brand-foot {
+        display: none;
+      }
+
+      .account-panel {
+        padding: 26px 22px 28px;
+      }
+    }
+
+    @media (max-width: 480px) {
+      .account-page {
+        padding: 12px 12px 26px;
+      }
+
+      .account-brand {
+        min-height: 330px;
+        padding: 21px 19px 18px;
+      }
+
+      .brand-copy h1 {
+        font-size: 31px;
+      }
+
+      .benefit-list {
+        margin-top: 16px;
+      }
+
+      .brand-visual {
+        display: none;
+      }
+
+      .account-panel {
+        padding: 23px 18px 25px;
+      }
+
+      .account-panel h2 {
+        font-size: 23px;
+      }
+
+      .field-row {
+        flex-direction: column;
+      }
+
+      .field-row button {
+        width: 100%;
+      }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      .field-row input,
+      .field-row button,
+      .admin-link,
+      .admin-arrow {
+        transition: none;
+      }
+    }
+  </style>
 </BaseLayout>

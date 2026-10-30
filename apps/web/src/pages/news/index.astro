@@ -1,24 +1,991 @@
 ---
 import BaseLayout from '../../layouts/BaseLayout.astro';
+import StoryArt from '../../components/StoryArt.astro';
 import { newsArticles } from '../../data/catalog';
+
+const [lead, ...rest] = newsArticles;
+const sideStories = rest.slice(0, 2);
+const allStories = rest.slice(2);
+const categories = [...new Set(newsArticles.map((article) => article.category))];
+const readTime = (excerpt: string) => Math.max(2, Math.round(excerpt.split(' ').length / 22));
 ---
 
-<BaseLayout title="News | TechAtlas" description="Latest mobile technology stories and industry analysis.">
-  <div class="page-shell">
-    <div class="breadcrumbs">Home / News</div>
-    <div class="page-head">
-      <h1>Latest technology news</h1>
-    </div>
+<BaseLayout title="News | TechAtlas" description="Latest mobile technology stories, launches, industry analysis, and the rumors worth watching.">
+  <div class="news-page">
+    <nav class="crumbs" aria-label="Breadcrumb">
+      <a href="/">Home</a><span aria-hidden="true">/</span><span>News</span>
+    </nav>
 
-    <div class="grid-3">
-      {newsArticles.map((article) => (
-        <article class="article-card">
-          <span class="pill">{article.category}</span>
-          <h3><a href={`/news/${article.slug}`}>{article.title}</a></h3>
-          <p class="muted">{article.excerpt}</p>
-          <p>{article.author} • {article.publishedAt}</p>
-        </article>
-      ))}
-    </div>
+    <header class="news-head">
+      <div>
+        <span class="eyebrow">The TechAtlas desk</span>
+        <h1>Signals, not noise.</h1>
+        <p>Launches, leaks, industry shifts and the mobile stories that actually change what you should buy.</p>
+      </div>
+      <div class="head-aside">
+        <span class="live-line"><i aria-hidden="true"></i> Updating daily</span>
+        <strong>{newsArticles.length}</strong>
+        <span>stories in this edition</span>
+      </div>
+    </header>
+
+    <section class="lead-grid" aria-label="Top stories">
+      <a class="lead-story" href={`/news/${lead.slug}`}>
+        <span class="lead-art">
+          <StoryArt title={lead.title} category={lead.category} variant="hero" />
+        </span>
+        <span class="lead-shade" aria-hidden="true"></span>
+        <span class="lead-top">
+          <span class="lead-category">{lead.category}</span>
+          <span class="lead-date">{lead.publishedAt}</span>
+        </span>
+        <span class="lead-copy">
+          <span class="lead-kicker">Top story</span>
+          <strong>{lead.title}</strong>
+          <span class="lead-excerpt">{lead.excerpt}</span>
+          <span class="lead-footer">
+            <span>By {lead.author}</span>
+            <span>{readTime(lead.excerpt)} min read</span>
+            <span class="lead-arrow" aria-hidden="true">→</span>
+          </span>
+        </span>
+      </a>
+
+      <div class="side-stories">
+        {sideStories.map((story) => (
+          <a class="side-story" href={`/news/${story.slug}`}>
+            <span class="side-art">
+              <StoryArt title={story.title} category={story.category} variant="wide" />
+            </span>
+            <span class="side-shade" aria-hidden="true"></span>
+            <span class="side-copy">
+              <span class="side-meta"><span>{story.category}</span> · {story.publishedAt}</span>
+              <strong>{story.title}</strong>
+              <span class="side-read">Read story <span aria-hidden="true">↗</span></span>
+            </span>
+          </a>
+        ))}
+      </div>
+    </section>
+
+    <section class="stories-section" aria-labelledby="all-stories-title">
+      <header class="stories-head">
+        <div>
+          <span class="eyebrow">The feed</span>
+          <h2 id="all-stories-title">All stories</h2>
+        </div>
+        <div class="category-tabs" role="tablist" aria-label="Filter stories by category">
+          <button class="category-tab is-active" type="button" data-category="all" role="tab" aria-selected="true">All</button>
+          {categories.map((category) => (
+            <button class="category-tab" type="button" data-category={category} role="tab" aria-selected="false">{category}</button>
+          ))}
+        </div>
+      </header>
+
+      <div class="story-grid" data-story-grid>
+        {allStories.map((story) => (
+          <a class="story-card" href={`/news/${story.slug}`} data-story-category={story.category}>
+            <span class="story-art">
+              <StoryArt title={story.title} category={story.category} variant="card" />
+            </span>
+            <span class="story-copy">
+              <span class="story-meta">
+                <span class="story-category">{story.category}</span>
+                <i aria-hidden="true">·</i>
+                {story.publishedAt}
+                <i aria-hidden="true">·</i>
+                {readTime(story.excerpt)} min
+              </span>
+              <strong>{story.title}</strong>
+              <span class="story-excerpt">{story.excerpt}</span>
+              <span class="story-author">By {story.author}</span>
+            </span>
+            <span class="story-arrow" aria-hidden="true">↗</span>
+          </a>
+        ))}
+      </div>
+
+      <p class="empty-note hidden" data-empty-note role="status">No stories in this category yet. Try another filter.</p>
+    </section>
+
+    <section class="newsletter" aria-labelledby="newsletter-title">
+      <div>
+        <span class="newsletter-eyebrow">The weekly brief</span>
+        <h2 id="newsletter-title">The five stories worth your time.</h2>
+        <p>A sharp Friday edit of launches, reviews and the industry moves that matter. No noise, no daily pings.</p>
+      </div>
+      <form class="newsletter-form" id="newsletter-form">
+        <label class="sr-only" for="newsletter-email">Email address</label>
+        <input id="newsletter-email" type="email" name="email" placeholder="you@example.com" required />
+        <button type="submit">Subscribe <span aria-hidden="true">→</span></button>
+        <p class="newsletter-status" role="status" aria-live="polite" data-newsletter-status></p>
+      </form>
+      <span class="newsletter-ghost" aria-hidden="true">WEEKLY</span>
+    </section>
   </div>
+
+  <script>
+    const tabs = [...document.querySelectorAll<HTMLButtonElement>('[data-category]')];
+    const cards = [...document.querySelectorAll<HTMLElement>('[data-story-category]')];
+    const emptyNote = document.querySelector<HTMLElement>('[data-empty-note]');
+
+    tabs.forEach((tab) => {
+      tab.addEventListener('click', () => {
+        tabs.forEach((item) => {
+          item.classList.toggle('is-active', item === tab);
+          item.setAttribute('aria-selected', String(item === tab));
+        });
+        const target = tab.dataset.category ?? 'all';
+        let visible = 0;
+        cards.forEach((card) => {
+          const match = target === 'all' || card.dataset.storyCategory === target;
+          card.hidden = !match;
+          if (match) visible += 1;
+        });
+        emptyNote?.classList.toggle('hidden', visible > 0);
+      });
+    });
+
+    const form = document.querySelector<HTMLFormElement>('#newsletter-form');
+    const status = document.querySelector<HTMLElement>('[data-newsletter-status]');
+    form?.addEventListener('submit', (event) => {
+      event.preventDefault();
+      const email = form.querySelector<HTMLInputElement>('input[type="email"]');
+      if (!status) return;
+      if (!email?.value || !email.checkValidity()) {
+        status.textContent = 'Enter a valid email address.';
+        status.classList.add('is-error');
+        return;
+      }
+      status.classList.remove('is-error');
+      status.textContent = 'You are on the preview list — no email was stored.';
+      form.reset();
+    });
+  </script>
+
+  <style>
+    :global(body) {
+      background: #eef1f4;
+      font-family: 'Segoe UI', system-ui, -apple-system, BlinkMacSystemFont, Arial, sans-serif;
+    }
+
+    .news-page {
+      --ink: #1b212a;
+      --line: #dbe0e7;
+      --accent: #e9542d;
+      width: 100%;
+      max-width: 1240px;
+      margin: 0 auto;
+      padding: 16px 18px 0;
+      color: var(--ink);
+    }
+
+    .crumbs {
+      display: flex;
+      align-items: center;
+      gap: 7px;
+      margin-bottom: 12px;
+      color: #8a94a2;
+      font-size: 9px;
+      font-weight: 600;
+    }
+
+    .crumbs a {
+      color: #586575;
+      text-decoration: none;
+    }
+
+    .crumbs a:hover {
+      color: var(--accent);
+    }
+
+    .news-head {
+      display: flex;
+      align-items: flex-end;
+      justify-content: space-between;
+      gap: 24px;
+      padding: 5px 2px 20px;
+    }
+
+    .eyebrow {
+      display: block;
+      margin-bottom: 7px;
+      color: var(--accent);
+      font-size: 8px;
+      font-weight: 800;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+    }
+
+    .news-head h1 {
+      margin: 0 0 6px;
+      color: #161d26;
+      font-size: clamp(33px, 4.5vw, 50px);
+      font-weight: 700;
+      letter-spacing: -0.055em;
+      line-height: 0.98;
+    }
+
+    .news-head p {
+      max-width: 54ch;
+      margin: 0;
+      color: #6e7887;
+      font-size: 11px;
+      line-height: 1.55;
+    }
+
+    .head-aside {
+      display: grid;
+      justify-items: end;
+      flex-shrink: 0;
+      padding-bottom: 2px;
+    }
+
+    .live-line {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      margin-bottom: 5px;
+      color: #d9441f;
+      font-size: 7.5px;
+      font-weight: 800;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+    }
+
+    .live-line i {
+      width: 5px;
+      height: 5px;
+      border-radius: 50%;
+      background: #e9542d;
+      box-shadow: 0 0 0 3px rgba(233, 84, 45, 0.14);
+      animation: pulse 2.4s ease-in-out infinite;
+    }
+
+    .head-aside strong {
+      color: #1f2731;
+      font-size: 28px;
+      font-weight: 800;
+      letter-spacing: -0.05em;
+      line-height: 1;
+    }
+
+    .head-aside > span:last-child {
+      color: #98a2ae;
+      font-size: 8px;
+      font-weight: 700;
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+    }
+
+    .lead-grid {
+      display: grid;
+      grid-template-columns: minmax(0, 1.62fr) minmax(260px, 0.88fr);
+      gap: 11px;
+      margin-bottom: 18px;
+    }
+
+    .lead-story {
+      position: relative;
+      display: block;
+      overflow: hidden;
+      min-height: 438px;
+      border-radius: 10px;
+      background: #151a21;
+      color: #ffffff;
+      text-decoration: none;
+      isolation: isolate;
+      box-shadow: 0 18px 42px rgba(20, 26, 34, 0.14);
+    }
+
+    .lead-story:hover {
+      text-decoration: none;
+    }
+
+    .lead-art,
+    .side-art {
+      position: absolute;
+      inset: 0;
+    }
+
+    .lead-art :global(.story-art),
+    .side-art :global(.story-art) {
+      height: 100%;
+      min-height: 100%;
+    }
+
+    .lead-art :global(.story-badge),
+    .side-art :global(.story-badge) {
+      display: none;
+    }
+
+    .lead-shade {
+      position: absolute;
+      inset: 0;
+      background:
+        linear-gradient(0deg, rgba(4, 7, 12, 0.86) 0%, rgba(4, 7, 12, 0.12) 68%),
+        linear-gradient(90deg, rgba(4, 7, 12, 0.32) 0%, transparent 60%);
+    }
+
+    .lead-top {
+      position: absolute;
+      top: 15px;
+      right: 15px;
+      left: 15px;
+      z-index: 2;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+    }
+
+    .lead-category {
+      display: inline-flex;
+      align-items: center;
+      padding: 5px 8px;
+      border: 1px solid rgba(255, 255, 255, 0.22);
+      border-radius: 3px;
+      background: rgba(5, 9, 15, 0.46);
+      color: #ffffff;
+      font-size: 8px;
+      font-weight: 800;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      backdrop-filter: blur(8px);
+    }
+
+    .lead-date {
+      color: rgba(255, 255, 255, 0.64);
+      font-size: 8px;
+      font-weight: 600;
+    }
+
+    .lead-copy {
+      position: absolute;
+      right: 26px;
+      bottom: 22px;
+      left: 26px;
+      z-index: 2;
+      display: grid;
+      gap: 8px;
+      max-width: 620px;
+    }
+
+    .lead-kicker {
+      color: #ffad90;
+      font-size: 8px;
+      font-weight: 800;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+    }
+
+    .lead-copy strong {
+      max-width: 18ch;
+      color: #ffffff;
+      font-size: clamp(27px, 3.6vw, 40px);
+      font-weight: 700;
+      letter-spacing: -0.045em;
+      line-height: 1.03;
+      text-shadow: 0 2px 18px rgba(0, 0, 0, 0.32);
+    }
+
+    .lead-excerpt {
+      max-width: 52ch;
+      color: rgba(255, 255, 255, 0.76);
+      font-size: 10px;
+      line-height: 1.55;
+    }
+
+    .lead-footer {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-top: 4px;
+      color: rgba(255, 255, 255, 0.52);
+      font-size: 8px;
+    }
+
+    .lead-footer > span:first-child {
+      color: rgba(255, 255, 255, 0.74);
+      font-weight: 600;
+    }
+
+    .lead-arrow {
+      display: grid;
+      width: 27px;
+      height: 27px;
+      margin-left: auto;
+      place-items: center;
+      border: 1px solid rgba(255, 255, 255, 0.3);
+      border-radius: 50%;
+      background: rgba(5, 9, 15, 0.32);
+      color: #ffffff;
+      font-size: 11px;
+      transition: background 150ms, transform 150ms;
+    }
+
+    .lead-story:hover .lead-arrow {
+      background: rgba(233, 84, 45, 0.88);
+      transform: translateX(2px);
+    }
+
+    .side-stories {
+      display: grid;
+      grid-template-rows: 1fr 1fr;
+      gap: 11px;
+    }
+
+    .side-story {
+      position: relative;
+      display: block;
+      overflow: hidden;
+      min-height: 0;
+      border-radius: 9px;
+      background: #171c23;
+      color: #ffffff;
+      text-decoration: none;
+      isolation: isolate;
+      box-shadow: 0 10px 24px rgba(20, 26, 34, 0.09);
+    }
+
+    .side-story:hover {
+      text-decoration: none;
+    }
+
+    .side-shade {
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(0deg, rgba(4, 7, 12, 0.88) 0%, rgba(4, 7, 12, 0.08) 76%);
+    }
+
+    .side-copy {
+      position: absolute;
+      right: 15px;
+      bottom: 14px;
+      left: 15px;
+      z-index: 2;
+      display: grid;
+      gap: 4px;
+    }
+
+    .side-meta {
+      color: #ffad90;
+      font-size: 7.5px;
+      font-weight: 700;
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+    }
+
+    .side-copy strong {
+      display: -webkit-box;
+      overflow: hidden;
+      padding-right: 14px;
+      color: #ffffff;
+      font-size: 14px;
+      font-weight: 700;
+      line-height: 1.23;
+      -webkit-box-orient: vertical;
+      -webkit-line-clamp: 3;
+    }
+
+    .side-read {
+      color: rgba(255, 255, 255, 0.56);
+      font-size: 7.5px;
+      font-weight: 700;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+    }
+
+    .side-read span {
+      color: #ffad90;
+    }
+
+    .stories-section {
+      overflow: hidden;
+      border: 1px solid var(--line);
+      border-radius: 9px;
+      background: #ffffff;
+      box-shadow: 0 1px 2px rgba(23, 32, 44, 0.035), 0 10px 24px rgba(23, 32, 44, 0.025);
+    }
+
+    .stories-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 18px;
+      padding: 16px 16px 14px;
+      border-bottom: 1px solid #edf0f3;
+    }
+
+    .stories-head .eyebrow {
+      margin-bottom: 4px;
+    }
+
+    .stories-head h2 {
+      margin: 0;
+      color: #1d2530;
+      font-size: 21px;
+      font-weight: 700;
+      letter-spacing: -0.04em;
+      line-height: 1;
+    }
+
+    .category-tabs {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      flex-wrap: wrap;
+      justify-content: flex-end;
+    }
+
+    .category-tab {
+      padding: 5px 8px;
+      border: 1px solid #e0e5eb;
+      border-radius: 3px;
+      background: #fafbfc;
+      color: #6c7887;
+      font-size: 8px;
+      font-weight: 700;
+      letter-spacing: 0.03em;
+      text-transform: uppercase;
+      cursor: pointer;
+      transition: border-color 140ms, background 140ms, color 140ms;
+    }
+
+    .category-tab:hover {
+      border-color: #f0b7a5;
+      color: #bd3e1c;
+    }
+
+    .category-tab.is-active {
+      border-color: #2a323d;
+      background: #2a323d;
+      color: #ffffff;
+    }
+
+    .story-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+    }
+
+    .story-card {
+      display: grid;
+      grid-template-columns: 138px minmax(0, 1fr) 14px;
+      align-items: center;
+      gap: 12px;
+      padding: 13px 15px;
+      border-bottom: 1px solid #edf0f3;
+      color: inherit;
+      text-decoration: none;
+      transition: background 140ms;
+    }
+
+    .story-card:nth-child(odd) {
+      border-right: 1px solid #edf0f3;
+    }
+
+    .story-card[hidden] {
+      display: none;
+    }
+
+    .story-card:hover {
+      background: #f8f9fb;
+      text-decoration: none;
+    }
+
+    .story-art {
+      position: relative;
+      display: block;
+      width: 138px;
+      height: 92px;
+      overflow: hidden;
+      border-radius: 5px;
+      background: #202731;
+    }
+
+    .story-art :global(.story-art) {
+      height: 100%;
+      min-height: 100%;
+    }
+
+    .story-art :global(.story-badge) {
+      display: none;
+    }
+
+    .story-copy {
+      display: grid;
+      gap: 3px;
+      min-width: 0;
+    }
+
+    .story-meta {
+      display: flex;
+      align-items: center;
+      gap: 5px;
+      color: #9aa4b1;
+      font-size: 7px;
+      font-weight: 600;
+    }
+
+    .story-meta i {
+      color: #c3cad3;
+      font-style: normal;
+    }
+
+    .story-category {
+      color: #d9441f;
+      font-weight: 800;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+    }
+
+    .story-copy strong {
+      display: -webkit-box;
+      overflow: hidden;
+      color: #232b35;
+      font-size: 11px;
+      font-weight: 700;
+      line-height: 1.3;
+      -webkit-box-orient: vertical;
+      -webkit-line-clamp: 2;
+    }
+
+    .story-card:hover .story-copy strong {
+      color: #c63c1b;
+    }
+
+    .story-excerpt {
+      display: -webkit-box;
+      overflow: hidden;
+      color: #7b8694;
+      font-size: 8.5px;
+      line-height: 1.4;
+      -webkit-box-orient: vertical;
+      -webkit-line-clamp: 2;
+    }
+
+    .story-author {
+      color: #a0a9b5;
+      font-size: 7px;
+    }
+
+    .story-arrow {
+      color: #bdc5cf;
+      font-size: 9px;
+      transition: color 140ms, transform 140ms;
+    }
+
+    .story-card:hover .story-arrow {
+      color: var(--accent);
+      transform: translate(1px, -1px);
+    }
+
+    .empty-note {
+      padding: 34px;
+      color: #8a94a2;
+      font-size: 10px;
+      text-align: center;
+    }
+
+    .empty-note.hidden {
+      display: none;
+    }
+
+    .newsletter {
+      position: relative;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 28px;
+      overflow: hidden;
+      min-height: 170px;
+      margin-top: 14px;
+      padding: 25px 28px;
+      border-radius: 9px;
+      background:
+        radial-gradient(circle at 90% 0%, rgba(255, 122, 80, 0.32) 0%, transparent 36%),
+        linear-gradient(140deg, #29313c 0%, #151a21 100%);
+      color: #ffffff;
+      box-shadow: 0 18px 40px rgba(20, 26, 34, 0.13);
+      isolation: isolate;
+    }
+
+    .newsletter > div {
+      position: relative;
+      z-index: 2;
+      max-width: 560px;
+    }
+
+    .newsletter-eyebrow {
+      display: block;
+      margin-bottom: 6px;
+      color: #ffad90;
+      font-size: 8px;
+      font-weight: 800;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+    }
+
+    .newsletter h2 {
+      max-width: 18ch;
+      margin: 0 0 6px;
+      color: #ffffff;
+      font-size: 25px;
+      font-weight: 700;
+      letter-spacing: -0.035em;
+      line-height: 1.1;
+    }
+
+    .newsletter p {
+      max-width: 52ch;
+      margin: 0;
+      color: #aab4c2;
+      font-size: 9.5px;
+      line-height: 1.5;
+    }
+
+    .newsletter-form {
+      position: relative;
+      z-index: 2;
+      display: grid;
+      grid-template-columns: minmax(160px, 1fr) auto;
+      gap: 5px;
+      align-items: start;
+      width: min(390px, 100%);
+      flex-shrink: 0;
+    }
+
+    .newsletter-form input {
+      height: 37px;
+      padding: 0 10px;
+      border: 1px solid #414b59;
+      border-radius: 4px;
+      outline: 0;
+      background: rgba(255, 255, 255, 0.08);
+      color: #ffffff;
+      font-size: 10px;
+    }
+
+    .newsletter-form input::placeholder {
+      color: #8b97a8;
+    }
+
+    .newsletter-form input:focus {
+      border-color: #ff9b7b;
+      box-shadow: 0 0 0 3px rgba(233, 84, 45, 0.13);
+    }
+
+    .newsletter-form button {
+      height: 37px;
+      padding: 0 13px;
+      border: 1px solid #c43d1c;
+      border-radius: 4px;
+      background: linear-gradient(180deg, #f7623a, #d9441f);
+      color: #ffffff;
+      font-size: 8.5px;
+      font-weight: 800;
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+      cursor: pointer;
+      box-shadow: 0 4px 12px rgba(217, 68, 31, 0.22);
+    }
+
+    .newsletter-form button:hover {
+      filter: brightness(1.07);
+    }
+
+    .newsletter-status {
+      grid-column: 1 / -1;
+      min-height: 11px;
+      margin: 2px 0 0 !important;
+      color: #ffb499 !important;
+      font-size: 8px !important;
+    }
+
+    .newsletter-status.is-error {
+      color: #ff9b9b !important;
+    }
+
+    .newsletter-ghost {
+      position: absolute;
+      z-index: 1;
+      right: -8px;
+      bottom: -30px;
+      color: rgba(255, 255, 255, 0.035);
+      font-size: 120px;
+      font-weight: 800;
+      letter-spacing: -0.08em;
+      line-height: 1;
+      pointer-events: none;
+    }
+
+    .sr-only {
+      position: absolute;
+      width: 1px;
+      height: 1px;
+      padding: 0;
+      margin: -1px;
+      overflow: hidden;
+      clip: rect(0, 0, 0, 0);
+      white-space: nowrap;
+      border: 0;
+    }
+
+    @keyframes pulse {
+      0%,
+      100% {
+        opacity: 1;
+        transform: scale(1);
+      }
+      50% {
+        opacity: 0.4;
+        transform: scale(0.8);
+      }
+    }
+
+    @media (max-width: 960px) {
+      .lead-grid {
+        grid-template-columns: minmax(0, 1.45fr) minmax(240px, 0.9fr);
+      }
+
+      .lead-story {
+        min-height: 400px;
+      }
+
+      .story-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .story-card:nth-child(odd) {
+        border-right: 0;
+      }
+
+      .newsletter {
+        align-items: flex-start;
+        flex-direction: column;
+        gap: 15px;
+      }
+
+      .newsletter-form {
+        width: min(460px, 100%);
+      }
+    }
+
+    @media (max-width: 700px) {
+      .news-head {
+        align-items: flex-start;
+      }
+
+      .head-aside {
+        display: none;
+      }
+
+      .lead-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .lead-story {
+        min-height: 370px;
+      }
+
+      .side-stories {
+        grid-template-columns: 1fr 1fr;
+        grid-template-rows: auto;
+      }
+
+      .side-story {
+        min-height: 190px;
+      }
+
+      .stories-head {
+        align-items: flex-start;
+        flex-direction: column;
+        gap: 10px;
+      }
+
+      .category-tabs {
+        justify-content: flex-start;
+      }
+    }
+
+    @media (max-width: 560px) {
+      .news-page {
+        padding: 12px 12px 0;
+      }
+
+      .lead-story {
+        min-height: 340px;
+      }
+
+      .lead-copy {
+        right: 18px;
+        bottom: 17px;
+        left: 18px;
+      }
+
+      .lead-copy strong {
+        font-size: 26px;
+      }
+
+      .lead-excerpt {
+        display: none;
+      }
+
+      .side-stories {
+        grid-template-columns: 1fr;
+      }
+
+      .side-story {
+        min-height: 170px;
+      }
+
+      .story-card {
+        grid-template-columns: 98px minmax(0, 1fr) 10px;
+        gap: 10px;
+        padding: 11px 12px;
+      }
+
+      .story-art {
+        width: 98px;
+        height: 76px;
+      }
+
+      .story-excerpt {
+        display: none;
+      }
+
+      .newsletter {
+        padding: 21px 18px;
+      }
+
+      .newsletter h2 {
+        font-size: 21px;
+      }
+
+      .newsletter-form {
+        grid-template-columns: 1fr;
+      }
+
+      .newsletter-form button {
+        width: 100%;
+      }
+
+      .newsletter-ghost {
+        font-size: 82px;
+      }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      .live-line i {
+        animation: none;
+      }
+
+      .category-tab,
+      .story-card,
+      .lead-arrow,
+      .story-arrow {
+        transition: none;
+      }
+    }
+  </style>
 </BaseLayout>

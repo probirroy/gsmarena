@@ -1,0 +1,237 @@
+---
+import DeviceArt from './DeviceArt.astro';
+
+interface DeviceRef {
+  name: string;
+  slug: string;
+  manufacturer?: string;
+}
+
+interface Props {
+  title: string;
+  category?: string;
+  variant?: 'hero' | 'wide' | 'card' | 'thumb' | 'video';
+  device?: DeviceRef;
+  showTitle?: boolean;
+}
+
+const { title, category = 'Feature', variant = 'card', device, showTitle = false } = Astro.props;
+
+const palettes: Record<string, { a: string; b: string; accent: string; glyph: string }> = {
+  review: { a: '#25130f', b: '#a93c26', accent: '#ffb290', glyph: 'R' },
+  launch: { a: '#071d35', b: '#1f6dab', accent: '#a5dcff', glyph: 'N' },
+  rumor: { a: '#2d2109', b: '#a77b24', accent: '#ffe0a1', glyph: '?' },
+  software: { a: '#08251e', b: '#1d7c62', accent: '#9ef0d1', glyph: 'S' },
+  comparison: { a: '#1d1235', b: '#6a3eaa', accent: '#d5b8ff', glyph: 'V' },
+  industry: { a: '#141b25', b: '#42556f', accent: '#c5d9f2', glyph: 'I' },
+  wearable: { a: '#06282b', b: '#167d80', accent: '#a0f3f1', glyph: 'W' },
+  camera: { a: '#101b3d', b: '#324ea5', accent: '#b9c9ff', glyph: 'C' },
+  'buying guide': { a: '#2b1708', b: '#b35c1f', accent: '#ffd0a1', glyph: 'B' },
+  'first look': { a: '#072530', b: '#137d96', accent: '#a4eeff', glyph: 'F' },
+  feature: { a: '#171b21', b: '#536172', accent: '#e0e8f2', glyph: 'T' }
+};
+
+const key = category.toLowerCase();
+const palette = palettes[key] ?? palettes.feature;
+---
+
+<div
+  class:list={['story-art', `story-art--${variant}`]}
+  style={`--story-a:${palette.a};--story-b:${palette.b};--story-accent:${palette.accent}`}
+  role={showTitle ? 'img' : undefined}
+  aria-label={showTitle ? title : undefined}
+>
+  <span class="story-wash" aria-hidden="true"></span>
+  <span class="story-grid" aria-hidden="true"></span>
+  <span class="story-orb story-orb--one" aria-hidden="true"></span>
+  <span class="story-orb story-orb--two" aria-hidden="true"></span>
+  <span class="story-ring story-ring--one" aria-hidden="true"></span>
+  <span class="story-ring story-ring--two" aria-hidden="true"></span>
+
+  {device ? (
+    <span class="story-device" aria-hidden="true">
+      <DeviceArt name={device.name} slug={device.slug} manufacturer={device.manufacturer} size={variant === 'hero' ? 'hero' : variant === 'thumb' ? 'sm' : 'md'} />
+    </span>
+  ) : (
+    <span class="story-glyph" aria-hidden="true">{palette.glyph}</span>
+  )}
+
+  <span class="story-badge">{category}</span>
+  {showTitle && <span class="story-title">{title}</span>}
+</div>
+
+<style>
+  .story-art {
+    position: relative;
+    display: block;
+    overflow: hidden;
+    min-height: 100%;
+    background:
+      radial-gradient(circle at 82% 8%, color-mix(in srgb, var(--story-accent) 26%, transparent) 0%, transparent 34%),
+      linear-gradient(135deg, var(--story-a) 0%, var(--story-b) 100%);
+    isolation: isolate;
+    color: #ffffff;
+  }
+
+  .story-art--hero {
+    min-height: 360px;
+  }
+
+  .story-art--wide {
+    min-height: 230px;
+  }
+
+  .story-art--card {
+    min-height: 170px;
+  }
+
+  .story-art--thumb {
+    min-height: 94px;
+  }
+
+  .story-art--video {
+    min-height: 154px;
+  }
+
+  .story-wash {
+    position: absolute;
+    z-index: -1;
+    inset: 0;
+    background: linear-gradient(180deg, transparent 25%, rgba(3, 7, 14, 0.72) 100%);
+  }
+
+  .story-grid {
+    position: absolute;
+    z-index: -1;
+    inset: 0;
+    background-image:
+      linear-gradient(rgba(255, 255, 255, 0.085) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(255, 255, 255, 0.075) 1px, transparent 1px);
+    background-size: 42px 42px;
+    mask-image: linear-gradient(135deg, rgba(0, 0, 0, 0.85), transparent 72%);
+    opacity: 0.7;
+  }
+
+  .story-orb {
+    position: absolute;
+    z-index: -1;
+    border-radius: 50%;
+    filter: blur(18px);
+  }
+
+  .story-orb--one {
+    width: 42%;
+    aspect-ratio: 1;
+    top: -14%;
+    right: 4%;
+    background: color-mix(in srgb, var(--story-accent) 46%, transparent);
+    opacity: 0.5;
+  }
+
+  .story-orb--two {
+    width: 52%;
+    aspect-ratio: 1;
+    bottom: -32%;
+    left: -10%;
+    background: color-mix(in srgb, var(--story-accent) 30%, transparent);
+    opacity: 0.4;
+  }
+
+  .story-ring {
+    position: absolute;
+    z-index: -1;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: 50%;
+  }
+
+  .story-ring--one {
+    width: 56%;
+    aspect-ratio: 1;
+    top: 12%;
+    right: -18%;
+    box-shadow: 0 0 0 18px rgba(255, 255, 255, 0.025), 0 0 0 42px rgba(255, 255, 255, 0.018);
+  }
+
+  .story-ring--two {
+    width: 22%;
+    aspect-ratio: 1;
+    top: 15%;
+    right: 13%;
+    border-color: color-mix(in srgb, var(--story-accent) 48%, transparent);
+  }
+
+  .story-glyph {
+    position: absolute;
+    right: 9%;
+    bottom: 8%;
+    color: rgba(255, 255, 255, 0.17);
+    font-size: clamp(54px, 7vw, 128px);
+    font-weight: 800;
+    letter-spacing: -0.1em;
+    line-height: 0.7;
+    text-shadow: 0 1px 0 rgba(255, 255, 255, 0.08);
+    user-select: none;
+  }
+
+  .story-device {
+    position: absolute;
+    right: 11%;
+    bottom: -12%;
+    display: block;
+    filter: drop-shadow(0 18px 18px rgba(0, 0, 0, 0.28));
+  }
+
+  .story-art--thumb .story-device {
+    right: 8%;
+    bottom: -16%;
+  }
+
+  .story-art--hero .story-device {
+    right: 7%;
+    bottom: -8%;
+  }
+
+  .story-badge {
+    position: absolute;
+    top: 12px;
+    left: 12px;
+    z-index: 2;
+    padding: 4px 8px;
+    border: 1px solid rgba(255, 255, 255, 0.23);
+    border-radius: 2px;
+    background: rgba(4, 8, 14, 0.5);
+    color: rgba(255, 255, 255, 0.9);
+    font-size: 9px;
+    font-weight: 800;
+    letter-spacing: 0.08em;
+    line-height: 1;
+    text-transform: uppercase;
+    backdrop-filter: blur(8px);
+  }
+
+  .story-title {
+    position: absolute;
+    right: 16px;
+    bottom: 14px;
+    left: 16px;
+    z-index: 2;
+    color: #ffffff;
+    font-size: 15px;
+    font-weight: 700;
+    line-height: 1.25;
+    text-shadow: 0 1px 8px rgba(0, 0, 0, 0.52);
+  }
+
+  .story-art--thumb .story-badge {
+    top: 8px;
+    left: 8px;
+    padding: 3px 6px;
+    font-size: 8px;
+  }
+
+  .story-art--video .story-device {
+    right: 6%;
+    bottom: -24%;
+    transform: scale(0.8);
+  }
+</style>

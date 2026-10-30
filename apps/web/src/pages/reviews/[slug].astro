@@ -1,6 +1,8 @@
 ---
 import BaseLayout from '../../layouts/BaseLayout.astro';
-import { getReviewBySlug, reviews } from '../../data/catalog';
+import StoryArt from '../../components/StoryArt.astro';
+import DeviceArt from '../../components/DeviceArt.astro';
+import { getReviewBySlug, getPhoneBySlug, reviews } from '../../data/catalog';
 
 export function getStaticPaths() {
   return reviews.map((review) => ({ params: { slug: review.slug } }));
@@ -11,17 +13,1307 @@ const review = getReviewBySlug(slug ?? '');
 if (!review) {
   throw new Error('Review not found');
 }
+
+const reviewDevices: Record<string, { name: string; slug: string; manufacturer: string }> = {
+  'vivo-x500-pro-max-review': { name: 'Vivo X500 Pro Max', slug: 'vivo-x500-pro-max', manufacturer: 'vivo' },
+  'galaxy-tab-s10-ultra-review': { name: 'Galaxy Tab S10 Ultra', slug: 'galaxy-tab-s10-ultra', manufacturer: 'samsung' },
+  'samsung-galaxy-s25-ultra-review': { name: 'Samsung Galaxy S25 Ultra', slug: 'samsung-galaxy-s25-ultra', manufacturer: 'samsung' },
+  'google-pixel-9-pro-review': { name: 'Google Pixel 9 Pro', slug: 'google-pixel-9-pro', manufacturer: 'google' },
+  'oneplus-12-review': { name: 'OnePlus 12', slug: 'oneplus-12', manufacturer: 'oneplus' }
+};
+
+const device = reviewDevices[review.slug];
+const phone = device ? getPhoneBySlug(device.slug) : undefined;
+const related = reviews.filter((item) => item.slug !== review.slug).slice(0, 3);
+
+const verdictLabel = (score: number) => score >= 9.3 ? 'Outstanding' : score >= 9 ? 'Excellent' : score >= 8.5 ? 'Highly recommended' : 'Recommended';
+const clampScore = (value: number) => Math.min(10, Math.max(7, Math.round(value * 10) / 10));
+const breakdown = [
+  ['Design', clampScore(review.score - 0.1)],
+  ['Display', clampScore(review.score + 0.1)],
+  ['Performance', clampScore(review.score - 0.3)],
+  ['Camera', clampScore(review.score + 0.2)],
+  ['Battery', clampScore(review.score - 0.2)],
+  ['Value', clampScore(review.score - 0.4)]
+] as const;
+
+const pros = phone?.highlights ?? [
+  'A considered design that feels good in daily use',
+  'Strong, consistent performance across everyday tasks',
+  'A camera system that earns its place in the price bracket'
+];
+const cons = [
+  'Sample verdict only — not a lab-tested result',
+  'Regional pricing and availability will vary'
+];
 ---
 
 <BaseLayout title={`${review.title} | TechAtlas`} description={review.excerpt}>
-  <div class="page-shell">
-    <div class="breadcrumbs">Home / Reviews / {review.title}</div>
-    <article class="panel">
-      <span class="pill">Review score {review.score}/10</span>
+  <div class="review-page">
+    <nav class="crumbs" aria-label="Breadcrumb">
+      <a href="/">Home</a><span aria-hidden="true">/</span>
+      <a href="/reviews">Reviews</a><span aria-hidden="true">/</span>
+      <span>{review.title}</span>
+    </nav>
+
+    <header class="review-head">
+      <span class="review-category">Review</span>
       <h1>{review.title}</h1>
-      <p class="muted">By {review.author} • {review.publishedAt}</p>
-      <p>{review.excerpt}</p>
-      <p>This detail view demonstrates the editorial review pattern for professional coverage, pros and cons, and review scorecards.</p>
-    </article>
+      <p class="review-dek">{review.excerpt}</p>
+      <div class="byline-row">
+        <span class="author-avatar" aria-hidden="true">{review.author.slice(0, 1)}</span>
+        <div class="byline-copy">
+          <strong>{review.author}</strong>
+          <span>{review.publishedAt} · 9 min read</span>
+        </div>
+        <button class="share-button" type="button" data-share>
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <circle cx="18" cy="5" r="3"></circle><circle cx="6" cy="12" r="3"></circle><circle cx="18" cy="19" r="3"></circle>
+            <path d="m8.6 10.5 6.8-4M8.6 13.5l6.8 4"></path>
+          </svg>
+          Share
+        </button>
+        <span class="share-status" role="status" aria-live="polite" data-share-status></span>
+      </div>
+    </header>
+
+    <div class="review-layout">
+      <main class="review-main">
+        <figure class="review-hero">
+          <StoryArt title={review.title} category="Review" variant="hero" device={device} />
+          <figcaption>Original TechAtlas illustration · Sample review imagery</figcaption>
+        </figure>
+
+        <article class="review-body">
+          <div class="verdict-card">
+            <div class="verdict-score" style={`--score:${review.score}`}>
+              <strong>{review.score}</strong>
+              <small>/ 10</small>
+            </div>
+            <div class="verdict-copy">
+              <span class="verdict-label">The verdict · {verdictLabel(review.score)}</span>
+              <p>{review.excerpt}</p>
+              <span class="verdict-author">Reviewed by {review.author}</span>
+            </div>
+            {phone && (
+              <a class="verdict-specs" href={`/phones/${phone.slug}`}>
+                Full specs <span aria-hidden="true">→</span>
+              </a>
+            )}
+          </div>
+
+          <div class="pros-cons">
+            <section class="pros">
+              <h2>The good</h2>
+              <ul>
+                {pros.map((pro) => <li>{pro}</li>)}
+              </ul>
+            </section>
+            <section class="cons">
+              <h2>Worth knowing</h2>
+              <ul>
+                {cons.map((con) => <li>{con}</li>)}
+              </ul>
+            </section>
+          </div>
+
+          <p class="review-lede">{review.excerpt}</p>
+          <p>There is a version of this review that is only a list of specifications. It would be shorter, and less useful. The interesting question is how the pieces work together once the novelty wears off: does the design stay comfortable, does the camera behave consistently, and does the software remain out of the way?</p>
+
+          <h2>Design and feel</h2>
+          <p>The first impression is one of discipline. The proportions feel deliberate, the controls are easy to reach, and the finish resists the urge to shout. That restraint matters over months rather than minutes. A phone that feels ordinary in the hand is often the one you keep reaching for.</p>
+
+          <blockquote>
+            <p>“A strong review is not a score out of ten. It is a clear account of what you gain, what you give up, and who the trade-off suits.”</p>
+            <cite>TechAtlas review desk</cite>
+          </blockquote>
+
+          <h2>Display and performance</h2>
+          <p>Everyday scrolling, switching between apps and video playback all feel settled. The display is bright enough to stay readable outdoors and calm enough at night, while the chipset has enough headroom that the phone rarely draws attention to itself with heat or stutter. That consistency is worth more than a peak benchmark number.</p>
+
+          <h2>Camera and battery</h2>
+          <p>The camera system is the part most people will notice first. In good light it is reliable and quick to focus; in harder conditions, the processing is best judged on consistency rather than a single dramatic sample. Battery life is similarly about rhythm: the phone should get through a normal day without asking you to change your habits.</p>
+
+          <h2>Software and support</h2>
+          <p>The software layer is tidy, with sensible defaults and a small number of genuinely useful additions. The longer-term question is support. Security updates and clear upgrade commitments are part of the product, even though they do not appear on the launch slide.</p>
+
+          <h2>The verdict</h2>
+          <p>{review.title} earns a {review.score}/10 in this sample edition. It is a recommendation with context rather than an absolute: the right choice for one buyer may still be the wrong one for another. Use the score as a starting point, then compare the details that match the way you actually use a phone.</p>
+
+          <div class="review-actions">
+            {phone
+              ? <a class="action-primary" href={`/phones/${phone.slug}`}>See the full specs <span aria-hidden="true">→</span></a>
+              : <a class="action-primary" href="/phones">Browse the phone directory <span aria-hidden="true">→</span></a>}
+            <a class="action-secondary" href="/compare">Compare the alternatives</a>
+          </div>
+        </article>
+      </main>
+
+      <aside class="review-side" aria-label="Review scorecard">
+        <section class="side-panel score-panel">
+          <header class="panel-head">
+            <h2>Scorecard</h2>
+            <span>{verdictLabel(review.score)}</span>
+          </header>
+          <div class="score-body">
+            <div class="score-total" style={`--score:${review.score}`}>
+              <strong>{review.score}</strong>
+              <small>out of 10</small>
+            </div>
+            <div class="score-breakdown">
+              {breakdown.map(([label, value]) => (
+                <div class="score-row">
+                  <span>{label}</span>
+                  <span class="score-bar"><i style={`width:${value * 10}%`}></i></span>
+                  <strong>{value}</strong>
+                </div>
+              ))}
+            </div>
+          </div>
+        </section>
+
+        {phone && (
+          <section class="side-panel specs-panel">
+            <header class="panel-head">
+              <h2>At a glance</h2>
+              <a href={`/phones/${phone.slug}`}>Specs <span aria-hidden="true">→</span></a>
+            </header>
+            <div class="specs-body">
+              <span class="specs-art">
+                <DeviceArt name={device!.name} slug={device!.slug} manufacturer={device!.manufacturer} size="md" width={58} />
+              </span>
+              <div class="specs-copy">
+                <strong>{device!.name}</strong>
+                <span>{phone.display}</span>
+                <span>{phone.chipset}</span>
+                <span>{phone.battery}</span>
+                <span>{phone.camera}</span>
+              </div>
+            </div>
+            <a class="specs-cta" href={`/compare?phones=${phone.slug},${phone.slug === 'samsung-galaxy-s25-ultra' ? 'iphone-16-pro-max' : 'samsung-galaxy-s25-ultra'}`}>
+              Compare this phone <span aria-hidden="true">→</span>
+            </a>
+          </section>
+        )}
+
+        <section class="side-panel more-panel">
+          <header class="panel-head">
+            <h2>More reviews</h2>
+            <a href="/reviews">All <span aria-hidden="true">→</span></a>
+          </header>
+          <div class="more-list">
+            {related.map((item) => (
+              <a class="more-row" href={`/reviews/${item.slug}`}>
+                <span class="more-copy">
+                  <small>{item.publishedAt}</small>
+                  <strong>{item.title}</strong>
+                </span>
+                <span class="more-score">{item.score}</span>
+              </a>
+            ))}
+          </div>
+        </section>
+
+        <section class="side-cta">
+          <span class="side-cta-eyebrow">Buying soon?</span>
+          <h2>Put the verdict beside the specs.</h2>
+          <p>Compare this phone with any other in the catalog before you decide.</p>
+          <a href="/compare">Open the comparison tool <span aria-hidden="true">→</span></a>
+        </section>
+      </aside>
+    </div>
+
+    <section class="related-section" aria-labelledby="related-title">
+      <header class="related-head">
+        <div>
+          <span class="eyebrow">Keep reading</span>
+          <h2 id="related-title">More verdicts</h2>
+        </div>
+        <a href="/reviews">See all reviews <span aria-hidden="true">→</span></a>
+      </header>
+      <div class="related-grid">
+        {related.map((item) => (
+          <a class="related-card" href={`/reviews/${item.slug}`}>
+            <span class="related-art">
+              <StoryArt title={item.title} category="Review" variant="card" device={reviewDevices[item.slug]} />
+            </span>
+            <span class="related-copy">
+              <span class="related-meta">{verdictLabel(item.score)} · {item.publishedAt}</span>
+              <strong>{item.title}</strong>
+              <span>{item.excerpt}</span>
+              <span class="related-score">{item.score}<small>/10</small></span>
+            </span>
+          </a>
+        ))}
+      </div>
+    </section>
+
+    <p class="catalog-notice">Sample editorial content: scores and opinions shown here are placeholders, not published test results.</p>
   </div>
+
+  <script>
+    const shareButton = document.querySelector<HTMLButtonElement>('[data-share]');
+    const shareStatus = document.querySelector<HTMLElement>('[data-share-status]');
+
+    shareButton?.addEventListener('click', async () => {
+      try {
+        await navigator.clipboard.writeText(window.location.href);
+        if (shareStatus) shareStatus.textContent = 'Link copied';
+      } catch {
+        if (shareStatus) shareStatus.textContent = 'Copy the URL from your address bar';
+      }
+      window.setTimeout(() => {
+        if (shareStatus) shareStatus.textContent = '';
+      }, 2800);
+    });
+  </script>
+
+  <style>
+    :global(body) {
+      background: #eef1f4;
+      font-family: 'Segoe UI', system-ui, -apple-system, BlinkMacSystemFont, Arial, sans-serif;
+    }
+
+    .review-page {
+      --ink: #1b212a;
+      --line: #dbe0e7;
+      --accent: #e9542d;
+      width: 100%;
+      max-width: 1180px;
+      margin: 0 auto;
+      padding: 16px 18px 0;
+      color: var(--ink);
+    }
+
+    .crumbs {
+      display: flex;
+      align-items: center;
+      gap: 7px;
+      margin-bottom: 14px;
+      color: #8a94a2;
+      font-size: 9px;
+      font-weight: 600;
+    }
+
+    .crumbs a {
+      color: #586575;
+      text-decoration: none;
+    }
+
+    .crumbs a:hover {
+      color: var(--accent);
+    }
+
+    .review-head {
+      max-width: 900px;
+      margin: 0 auto 20px;
+      padding: 2px 2px 0;
+    }
+
+    .review-category {
+      display: inline-flex;
+      align-items: center;
+      padding: 4px 7px;
+      border: 1px solid #f0c1b3;
+      border-radius: 3px;
+      background: #fff3ee;
+      color: #c04928;
+      font-size: 7.5px;
+      font-weight: 800;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+    }
+
+    .review-head h1 {
+      max-width: 23ch;
+      margin: 10px 0 9px;
+      color: #161d26;
+      font-size: clamp(30px, 4.3vw, 48px);
+      font-weight: 700;
+      letter-spacing: -0.05em;
+      line-height: 1.03;
+    }
+
+    .review-dek {
+      max-width: 66ch;
+      margin: 0 0 16px;
+      color: #657080;
+      font-size: 12px;
+      line-height: 1.55;
+    }
+
+    .byline-row {
+      display: flex;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 9px;
+      padding-top: 12px;
+      border-top: 1px solid var(--line);
+    }
+
+    .author-avatar {
+      display: grid;
+      width: 31px;
+      height: 31px;
+      place-items: center;
+      border-radius: 50%;
+      background: linear-gradient(145deg, #2d3540, #171c23);
+      color: #ff9b7b;
+      font-size: 11px;
+      font-weight: 800;
+    }
+
+    .byline-copy {
+      display: grid;
+      gap: 1px;
+    }
+
+    .byline-copy strong {
+      color: #343e4a;
+      font-size: 9.5px;
+      font-weight: 700;
+    }
+
+    .byline-copy span {
+      color: #98a2ae;
+      font-size: 8px;
+    }
+
+    .share-button {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      margin-left: auto;
+      padding: 6px 9px;
+      border: 1px solid #dbe0e7;
+      border-radius: 3px;
+      background: #ffffff;
+      color: #596575;
+      font-size: 8px;
+      font-weight: 700;
+      letter-spacing: 0.03em;
+      cursor: pointer;
+      text-transform: uppercase;
+    }
+
+    .share-button:hover {
+      border-color: #f0b7a5;
+      color: #bd3e1c;
+    }
+
+    .share-status {
+      color: #2d8a5b;
+      font-size: 8px;
+      font-weight: 600;
+    }
+
+    .review-layout {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) 300px;
+      gap: 18px;
+      align-items: start;
+    }
+
+    .review-main {
+      min-width: 0;
+      overflow: hidden;
+      border: 1px solid var(--line);
+      border-radius: 9px;
+      background: #ffffff;
+      box-shadow: 0 1px 2px rgba(23, 32, 44, 0.035), 0 10px 24px rgba(23, 32, 44, 0.025);
+    }
+
+    .review-hero {
+      margin: 0;
+      border-bottom: 1px solid var(--line);
+    }
+
+    .review-hero :global(.story-art) {
+      min-height: 340px;
+    }
+
+    .review-hero figcaption {
+      padding: 7px 13px;
+      border-top: 1px solid rgba(255, 255, 255, 0.08);
+      background: #232a33;
+      color: #8b97a8;
+      font-size: 7px;
+    }
+
+    .review-body {
+      padding: 22px 34px 28px;
+    }
+
+    .verdict-card {
+      display: grid;
+      grid-template-columns: 92px minmax(0, 1fr) auto;
+      align-items: center;
+      gap: 16px;
+      padding: 15px 16px;
+      border: 1px solid #f0c1b3;
+      border-radius: 7px;
+      background:
+        radial-gradient(circle at 100% 0%, rgba(255, 122, 80, 0.16) 0%, transparent 42%),
+        #fff8f5;
+    }
+
+    .verdict-score {
+      display: grid;
+      width: 78px;
+      height: 78px;
+      place-content: center;
+      justify-items: center;
+      border-radius: 50%;
+      background:
+        conic-gradient(#e9542d calc(var(--score) * 10%), #f3d7cd 0);
+      box-shadow: 0 4px 12px rgba(217, 68, 31, 0.14);
+    }
+
+    .verdict-score::before {
+      position: absolute;
+      width: 62px;
+      height: 62px;
+      border-radius: 50%;
+      background: #fff8f5;
+      content: '';
+    }
+
+    .verdict-score strong,
+    .verdict-score small {
+      position: relative;
+      z-index: 1;
+      line-height: 1;
+    }
+
+    .verdict-score strong {
+      color: #c04928;
+      font-size: 25px;
+      font-weight: 800;
+      letter-spacing: -0.05em;
+    }
+
+    .verdict-score small {
+      margin-top: 2px;
+      color: #b98f7f;
+      font-size: 7px;
+      font-weight: 700;
+    }
+
+    .verdict-copy {
+      display: grid;
+      gap: 3px;
+      min-width: 0;
+    }
+
+    .verdict-label {
+      color: #c04928;
+      font-size: 7px;
+      font-weight: 800;
+      letter-spacing: 0.09em;
+      text-transform: uppercase;
+    }
+
+    .verdict-copy p {
+      margin: 0;
+      color: #4d5866;
+      font-size: 9.5px;
+      line-height: 1.5;
+    }
+
+    .verdict-author {
+      color: #a0a9b5;
+      font-size: 7.5px;
+    }
+
+    .verdict-specs {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      align-self: center;
+      padding: 7px 9px;
+      border: 1px solid #eccabc;
+      border-radius: 3px;
+      background: #ffffff;
+      color: #b43a1b;
+      font-size: 7.5px;
+      font-weight: 800;
+      letter-spacing: 0.04em;
+      text-decoration: none;
+      text-transform: uppercase;
+      white-space: nowrap;
+    }
+
+    .verdict-specs:hover {
+      background: #d9441f;
+      border-color: #d9441f;
+      color: #ffffff;
+      text-decoration: none;
+    }
+
+    .pros-cons {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+      margin: 17px 0;
+    }
+
+    .pros,
+    .cons {
+      padding: 13px 15px;
+      border-radius: 6px;
+      background: #fafbfc;
+      border: 1px solid #edf0f3;
+    }
+
+    .pros {
+      border-left: 3px solid #3ca66c;
+    }
+
+    .cons {
+      border-left: 3px solid #d9a03a;
+    }
+
+    .pros h2,
+    .cons h2 {
+      margin: 0 0 7px;
+      color: #29323d;
+      font-size: 8px;
+      font-weight: 800;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+    }
+
+    .pros ul,
+    .cons ul {
+      display: grid;
+      gap: 5px;
+      margin: 0;
+      padding: 0;
+      list-style: none;
+    }
+
+    .pros li,
+    .cons li {
+      position: relative;
+      padding-left: 13px;
+      color: #5c6775;
+      font-size: 8.5px;
+      line-height: 1.45;
+    }
+
+    .pros li::before,
+    .cons li::before {
+      position: absolute;
+      left: 0;
+      font-weight: 800;
+    }
+
+    .pros li::before {
+      color: #2d8a5b;
+      content: '+';
+    }
+
+    .cons li::before {
+      color: #b47b1c;
+      content: '–';
+    }
+
+    .review-body > p {
+      max-width: 68ch;
+      margin: 0 0 15px;
+      color: #3f4a58;
+      font-size: 11.5px;
+      line-height: 1.7;
+    }
+
+    .review-body > p.review-lede {
+      color: #252f3a;
+      font-size: 14px;
+      font-weight: 500;
+      line-height: 1.6;
+    }
+
+    .review-body > p.review-lede::first-letter {
+      float: left;
+      margin: 3px 7px 0 0;
+      color: #d9441f;
+      font-size: 40px;
+      font-weight: 800;
+      line-height: 0.78;
+    }
+
+    .review-body h2 {
+      margin: 25px 0 9px;
+      color: #1d2530;
+      font-size: 18px;
+      font-weight: 700;
+      letter-spacing: -0.03em;
+    }
+
+    .review-body blockquote {
+      margin: 21px 0;
+      padding: 16px 18px;
+      border-left: 3px solid #e9542d;
+      border-radius: 0 5px 5px 0;
+      background: #fff6f2;
+    }
+
+    .review-body blockquote p {
+      margin: 0 0 6px;
+      color: #3f4a58;
+      font-size: 12px;
+      font-style: italic;
+      line-height: 1.55;
+    }
+
+    .review-body blockquote cite {
+      color: #b07a67;
+      font-size: 7.5px;
+      font-style: normal;
+      font-weight: 700;
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+    }
+
+    .review-actions {
+      display: flex;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 14px;
+      margin-top: 25px;
+      padding-top: 19px;
+      border-top: 1px solid #edf0f3;
+    }
+
+    .action-primary {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 9px 12px;
+      border-radius: 3px;
+      background: linear-gradient(180deg, #f7623a, #d9441f);
+      color: #ffffff;
+      font-size: 8.5px;
+      font-weight: 800;
+      letter-spacing: 0.04em;
+      text-decoration: none;
+      text-transform: uppercase;
+      box-shadow: 0 4px 12px rgba(217, 68, 31, 0.22);
+    }
+
+    .action-primary:hover {
+      filter: brightness(1.07);
+      text-decoration: none;
+    }
+
+    .action-secondary {
+      color: #586575;
+      font-size: 8.5px;
+      font-weight: 700;
+      text-decoration: underline;
+      text-underline-offset: 3px;
+    }
+
+    .action-secondary:hover {
+      color: var(--accent);
+    }
+
+    .review-side {
+      position: sticky;
+      top: 112px;
+      display: grid;
+      gap: 12px;
+      min-width: 0;
+    }
+
+    .side-panel {
+      overflow: hidden;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: #ffffff;
+      box-shadow: 0 1px 2px rgba(23, 32, 44, 0.035), 0 10px 24px rgba(23, 32, 44, 0.025);
+    }
+
+    .panel-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 9px;
+      min-height: 35px;
+      padding: 0 12px;
+      border-bottom: 1px solid #343b45;
+      background: linear-gradient(180deg, #3b434f 0%, #2d343e 100%);
+      color: #ffffff;
+    }
+
+    .panel-head h2 {
+      position: relative;
+      margin: 0;
+      padding-left: 9px;
+      color: #ffffff;
+      font-size: 9.5px;
+      font-weight: 800;
+      letter-spacing: 0.075em;
+      text-transform: uppercase;
+    }
+
+    .panel-head h2::before {
+      position: absolute;
+      top: 50%;
+      left: 0;
+      width: 3px;
+      height: 12px;
+      border-radius: 999px;
+      background: #ff7a50;
+      content: '';
+      transform: translateY(-50%);
+    }
+
+    .panel-head > span,
+    .panel-head > a {
+      color: #aeb9c8;
+      font-size: 8px;
+      font-weight: 700;
+      text-decoration: none;
+    }
+
+    .panel-head > a:hover {
+      color: #ffffff;
+    }
+
+    .score-body {
+      display: grid;
+      grid-template-columns: 78px minmax(0, 1fr);
+      align-items: center;
+      gap: 13px;
+      padding: 14px;
+    }
+
+    .score-total {
+      display: grid;
+      width: 74px;
+      height: 74px;
+      place-content: center;
+      justify-items: center;
+      border-radius: 50%;
+      background: conic-gradient(#e9542d calc(var(--score) * 10%), #edf0f4 0);
+      box-shadow: 0 3px 10px rgba(20, 28, 38, 0.08);
+    }
+
+    .score-total::before {
+      position: absolute;
+      width: 60px;
+      height: 60px;
+      border-radius: 50%;
+      background: #ffffff;
+      content: '';
+    }
+
+    .score-total strong,
+    .score-total small {
+      position: relative;
+      z-index: 1;
+      line-height: 1;
+    }
+
+    .score-total strong {
+      color: #1f2731;
+      font-size: 23px;
+      font-weight: 800;
+      letter-spacing: -0.05em;
+    }
+
+    .score-total small {
+      margin-top: 2px;
+      color: #98a2ae;
+      font-size: 6px;
+      font-weight: 700;
+      text-transform: uppercase;
+    }
+
+    .score-breakdown {
+      display: grid;
+      gap: 6px;
+    }
+
+    .score-row {
+      display: grid;
+      grid-template-columns: 54px minmax(0, 1fr) 19px;
+      align-items: center;
+      gap: 5px;
+    }
+
+    .score-row > span:first-child {
+      color: #6c7887;
+      font-size: 7.5px;
+      font-weight: 600;
+    }
+
+    .score-row > strong {
+      color: #3a4553;
+      font-size: 7.5px;
+      font-weight: 800;
+      text-align: right;
+    }
+
+    .score-bar {
+      height: 3px;
+      overflow: hidden;
+      border-radius: 999px;
+      background: #edf0f4;
+    }
+
+    .score-bar i {
+      display: block;
+      height: 100%;
+      border-radius: inherit;
+      background: linear-gradient(90deg, #f8a88d, #e9542d);
+    }
+
+    .specs-body {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 13px 14px;
+    }
+
+    .specs-art {
+      display: grid;
+      flex-shrink: 0;
+      place-items: center;
+    }
+
+    .specs-copy {
+      display: grid;
+      gap: 2px;
+      min-width: 0;
+    }
+
+    .specs-copy strong {
+      overflow: hidden;
+      color: #2a333e;
+      font-size: 10px;
+      font-weight: 700;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .specs-copy span {
+      overflow: hidden;
+      color: #8a94a2;
+      font-size: 7.5px;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .specs-cta {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+      padding: 9px 13px;
+      border-top: 1px solid #edf0f3;
+      background: #fafbfc;
+      color: #c04928;
+      font-size: 8px;
+      font-weight: 800;
+      letter-spacing: 0.04em;
+      text-decoration: none;
+      text-transform: uppercase;
+    }
+
+    .specs-cta:hover {
+      background: #fff3ee;
+      text-decoration: none;
+    }
+
+    .more-list {
+      display: grid;
+    }
+
+    .more-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 9px;
+      padding: 9px 12px;
+      border-bottom: 1px solid #edf0f3;
+      color: inherit;
+      text-decoration: none;
+      transition: background 140ms;
+    }
+
+    .more-row:last-child {
+      border-bottom: 0;
+    }
+
+    .more-row:hover {
+      background: #f8f9fb;
+      text-decoration: none;
+    }
+
+    .more-copy {
+      display: grid;
+      gap: 2px;
+      min-width: 0;
+    }
+
+    .more-copy small {
+      color: #a0a9b5;
+      font-size: 6.5px;
+    }
+
+    .more-copy strong {
+      display: -webkit-box;
+      overflow: hidden;
+      color: #38424f;
+      font-size: 9px;
+      font-weight: 700;
+      line-height: 1.3;
+      -webkit-box-orient: vertical;
+      -webkit-line-clamp: 2;
+    }
+
+    .more-row:hover .more-copy strong {
+      color: #c63c1b;
+    }
+
+    .more-score {
+      flex-shrink: 0;
+      color: #c04928;
+      font-size: 11px;
+      font-weight: 800;
+    }
+
+    .side-cta {
+      position: relative;
+      overflow: hidden;
+      padding: 18px 16px;
+      border-radius: 8px;
+      background:
+        radial-gradient(circle at 90% 0%, rgba(255, 122, 80, 0.34) 0%, transparent 38%),
+        linear-gradient(145deg, #29313c 0%, #151a21 100%);
+      color: #ffffff;
+      box-shadow: 0 16px 34px rgba(20, 26, 34, 0.12);
+    }
+
+    .side-cta-eyebrow {
+      display: block;
+      margin-bottom: 6px;
+      color: #ffad90;
+      font-size: 8px;
+      font-weight: 800;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+    }
+
+    .side-cta h2 {
+      max-width: 16ch;
+      margin: 0 0 6px;
+      color: #ffffff;
+      font-size: 17px;
+      font-weight: 700;
+      letter-spacing: -0.03em;
+      line-height: 1.16;
+    }
+
+    .side-cta p {
+      margin: 0 0 11px;
+      color: #aab4c2;
+      font-size: 9px;
+      line-height: 1.5;
+    }
+
+    .side-cta a {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      color: #ffb499;
+      font-size: 8.5px;
+      font-weight: 800;
+      letter-spacing: 0.04em;
+      text-decoration: none;
+      text-transform: uppercase;
+    }
+
+    .side-cta a:hover {
+      color: #ffffff;
+    }
+
+    .related-section {
+      margin-top: 20px;
+    }
+
+    .related-head {
+      display: flex;
+      align-items: flex-end;
+      justify-content: space-between;
+      gap: 16px;
+      margin-bottom: 10px;
+      padding: 0 2px;
+    }
+
+    .eyebrow {
+      display: block;
+      margin-bottom: 5px;
+      color: var(--accent);
+      font-size: 8px;
+      font-weight: 800;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+    }
+
+    .related-head h2 {
+      margin: 0;
+      color: #1d2530;
+      font-size: 21px;
+      font-weight: 700;
+      letter-spacing: -0.04em;
+      line-height: 1;
+    }
+
+    .related-head > a {
+      color: #596575;
+      font-size: 8px;
+      font-weight: 800;
+      letter-spacing: 0.04em;
+      text-decoration: none;
+      text-transform: uppercase;
+    }
+
+    .related-head > a:hover {
+      color: var(--accent);
+    }
+
+    .related-grid {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 10px;
+    }
+
+    .related-card {
+      display: grid;
+      grid-template-columns: 112px minmax(0, 1fr);
+      overflow: hidden;
+      border: 1px solid var(--line);
+      border-radius: 7px;
+      background: #ffffff;
+      color: inherit;
+      text-decoration: none;
+      transition: border-color 150ms, box-shadow 150ms, transform 150ms;
+    }
+
+    .related-card:hover {
+      border-color: #c8d0da;
+      box-shadow: 0 10px 24px rgba(23, 32, 44, 0.07);
+      text-decoration: none;
+      transform: translateY(-2px);
+    }
+
+    .related-art {
+      display: block;
+      min-height: 126px;
+      overflow: hidden;
+      background: #202731;
+    }
+
+    .related-art :global(.story-art) {
+      height: 100%;
+      min-height: 100%;
+    }
+
+    .related-art :global(.story-badge) {
+      display: none;
+    }
+
+    .related-copy {
+      position: relative;
+      display: grid;
+      align-content: start;
+      gap: 3px;
+      padding: 10px 11px 12px;
+      min-width: 0;
+    }
+
+    .related-meta {
+      color: #d9441f;
+      font-size: 6.5px;
+      font-weight: 800;
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+    }
+
+    .related-copy > strong {
+      display: -webkit-box;
+      overflow: hidden;
+      color: #2a333e;
+      font-size: 9.5px;
+      font-weight: 700;
+      line-height: 1.3;
+      -webkit-box-orient: vertical;
+      -webkit-line-clamp: 2;
+    }
+
+    .related-card:hover .related-copy > strong {
+      color: #c63c1b;
+    }
+
+    .related-copy > span:nth-child(3) {
+      display: -webkit-box;
+      overflow: hidden;
+      color: #8a94a2;
+      font-size: 7.5px;
+      line-height: 1.4;
+      -webkit-box-orient: vertical;
+      -webkit-line-clamp: 2;
+    }
+
+    .related-score {
+      align-self: end;
+      margin-top: 4px;
+      color: #c04928;
+      font-size: 13px;
+      font-weight: 800;
+    }
+
+    .related-score small {
+      color: #b7a198;
+      font-size: 6px;
+      font-weight: 700;
+    }
+
+    .catalog-notice {
+      margin: 16px 0 0;
+      color: #9aa4b1;
+      font-size: 8px;
+      text-align: center;
+    }
+
+    @media (max-width: 980px) {
+      .review-layout {
+        grid-template-columns: minmax(0, 1fr) 272px;
+      }
+
+      .review-body {
+        padding: 20px 24px 24px;
+      }
+
+      .related-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .related-card {
+        grid-template-columns: 140px minmax(0, 1fr);
+      }
+    }
+
+    @media (max-width: 780px) {
+      .review-layout {
+        grid-template-columns: 1fr;
+      }
+
+      .review-side {
+        position: static;
+        grid-template-columns: 1fr 1fr;
+      }
+
+      .side-cta {
+        grid-column: 1 / -1;
+      }
+
+      .verdict-card {
+        grid-template-columns: 78px minmax(0, 1fr);
+      }
+
+      .verdict-specs {
+        grid-column: 1 / -1;
+        justify-self: start;
+      }
+    }
+
+    @media (max-width: 560px) {
+      .review-page {
+        padding: 12px 12px 0;
+      }
+
+      .review-head {
+        margin-bottom: 15px;
+      }
+
+      .review-head h1 {
+        font-size: 29px;
+      }
+
+      .review-hero :global(.story-art) {
+        min-height: 220px;
+      }
+
+      .review-body {
+        padding: 17px 16px 21px;
+      }
+
+      .verdict-card {
+        grid-template-columns: 64px minmax(0, 1fr);
+        gap: 11px;
+        padding: 12px;
+      }
+
+      .verdict-score {
+        width: 56px;
+        height: 56px;
+      }
+
+      .verdict-score::before {
+        width: 44px;
+        height: 44px;
+      }
+
+      .verdict-score strong {
+        font-size: 19px;
+      }
+
+      .pros-cons {
+        grid-template-columns: 1fr;
+      }
+
+      .review-body > p {
+        font-size: 11px;
+      }
+
+      .review-body > p.review-lede {
+        font-size: 13px;
+      }
+
+      .review-side {
+        grid-template-columns: 1fr;
+      }
+
+      .score-body {
+        grid-template-columns: 74px minmax(0, 1fr);
+      }
+
+      .related-head > a {
+        display: none;
+      }
+
+      .related-card {
+        grid-template-columns: 106px minmax(0, 1fr);
+      }
+
+      .related-art {
+        min-height: 130px;
+      }
+
+      .share-status {
+        flex-basis: 100%;
+      }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      .more-row,
+      .related-card {
+        transition: none;
+      }
+    }
+  </style>
 </BaseLayout>
